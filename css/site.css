@@ -520,3 +520,11 @@ a.btn-gold { text-decoration: none; display: inline-flex; align-items: center; j
 }
 .my-card[hidden] { display: none; }
 @media (max-width: 520px) { .topbar-right:has(.my-card:not([hidden])) .pill { display: none; } }
+
+/* ---------- Cuenta atrás de la votación ---------- */
+.countdown { border-top: 1px solid var(--line); padding-top: 18px; display: grid; gap: 4px; }
+.countdown b { font-family: var(--serif); font-weight: 400; font-size: 34px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.countdown b span { font-family: var(--sans); font-size: 13px; color: var(--muted); margin: 0 10px 0 3px; letter-spacing: .06em; }
+.countdown small { color: var(--muted); font-size: 13px; }
+.countdown.closed b { font-size: 24px; color: var(--gold-hi); }
+.vote-closed { margin: 6px 2px; padding: 14px 16px; border-radius: 16px; border: 1px solid rgba(217,181,106,.3); background: rgba(217,181,106,.05); color: #cfcac2; font-size: 14px; line-height: 1.55; }

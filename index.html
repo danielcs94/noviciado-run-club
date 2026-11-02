@@ -10,8 +10,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;0,6..96,700;1,6..96,400&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.css">
-<link rel="stylesheet" href="css/site.css?v=202611020201">
-<link rel="stylesheet" href="css/admin.css?v=202611020201">
+<link rel="stylesheet" href="css/site.css?v=202611020214">
+<link rel="stylesheet" href="css/admin.css?v=202611020214">
 </head>
 <body>
 
@@ -80,6 +80,12 @@
           </div>
         </div>
 
+        <div class="countdown" id="countdown" hidden>
+          <span class="eyebrow" id="countdown-label">Votación de la ruta</span>
+          <b id="countdown-value"></b>
+          <small id="countdown-note"></small>
+        </div>
+
         <div class="counter">
           <div class="counter-top"><b class="gold-text" id="count">0</b><span>de <span id="cap">—</span> plazas reservadas</span></div>
           <div class="bar"><i id="bar"></i></div>
@@ -114,8 +120,8 @@
     <div id="route-body">
       <div class="route-empty">
         <svg viewBox="0 0 280 90" fill="none" aria-hidden="true"><path d="M10 70 C 50 10, 90 10, 120 45 S 190 85, 220 40 S 262 20, 270 30" stroke="#5f5c57" stroke-width="2" stroke-dasharray="4 8" stroke-linecap="round"/><circle cx="10" cy="70" r="5" fill="#d9b56a"/></svg>
-        <p><b style="color:var(--text);font-weight:500">La ruta la decidimos entre todos.</b> Cuando te apuntas, votas cuánto quieres correr y cómo de dura la quieres. Unos días antes del evento publicamos aquí el recorrido, con el mapa, el desnivel y el enlace para llevarlo en el móvil.</p>
-        <button class="btn-line small" type="button" data-open>Apúntate y vota</button>
+        <p id="route-empty-text"><b style="color:var(--text);font-weight:500">La ruta la decidimos entre todos.</b> Cuando te apuntas, votas cuánto quieres correr y cómo de dura la quieres. Unos días antes del evento publicamos aquí el recorrido, con el mapa, el desnivel y el enlace para llevarlo en el móvil.</p>
+        <button class="btn-line small" type="button" data-open id="route-empty-btn">Apúntate y vota</button>
       </div>
     </div>
   </section>
@@ -233,12 +239,15 @@
         <span class="eyebrow group-label">Tu ritmo</span>
         <div class="chips" id="pace-chips" role="radiogroup"></div>
 
-        <span class="eyebrow group-label">¿Cómo de intensa quieres la ruta?</span>
-        <div class="chips" id="intensity-chips" role="radiogroup"></div>
+        <div class="step" id="vote-fields">
+          <span class="eyebrow group-label">¿Cómo de intensa quieres la ruta?</span>
+          <div class="chips" id="intensity-chips" role="radiogroup"></div>
 
-        <span class="eyebrow group-label">¿Cuánto quieres correr?</span>
-        <div class="chips two" id="distance-chips" role="radiogroup"></div>
-        <p class="hint">Con los votos de todos decidimos la ruta. Si hay mucha diferencia, hacemos dos.</p>
+          <span class="eyebrow group-label">¿Cuánto quieres correr?</span>
+          <div class="chips two" id="distance-chips" role="radiogroup"></div>
+          <p class="hint" id="vote-hint">Con los votos de todos decidimos la ruta. Si hay mucha diferencia, hacemos dos.</p>
+        </div>
+        <p class="vote-closed" id="vote-closed" hidden></p>
 
         <label class="check"><input type="checkbox" name="terms" required><span>Soy mayor de 18 años y acepto la <a href="#">política de privacidad</a>.</span></label>
 
@@ -275,24 +284,24 @@
 <script type="importmap">
 {
   "imports": {
-    "./js/admin-checkin.js": "./js/admin-checkin.js?v=202611020201",
-    "./js/admin-route.js": "./js/admin-route.js?v=202611020201",
-    "./js/admin.js": "./js/admin.js?v=202611020201",
-    "./js/card.js": "./js/card.js?v=202611020201",
-    "./js/club.js": "./js/club.js?v=202611020201",
-    "./js/config.js": "./js/config.js?v=202611020201",
-    "./js/routemap.js": "./js/routemap.js?v=202611020201",
-    "./js/rutas/api.js": "./js/rutas/api.js?v=202611020201",
-    "./js/rutas/config.js": "./js/rutas/config.js?v=202611020201",
-    "./js/rutas/datasets.js": "./js/rutas/datasets.js?v=202611020201",
-    "./js/rutas/geo.js": "./js/rutas/geo.js?v=202611020201",
-    "./js/rutas/mapstyle.js": "./js/rutas/mapstyle.js?v=202611020201",
-    "./js/rutas/planner.js": "./js/rutas/planner.js?v=202611020201",
-    "./js/site.js": "./js/site.js?v=202611020201"
+    "./js/admin-checkin.js": "./js/admin-checkin.js?v=202611020214",
+    "./js/admin-route.js": "./js/admin-route.js?v=202611020214",
+    "./js/admin.js": "./js/admin.js?v=202611020214",
+    "./js/card.js": "./js/card.js?v=202611020214",
+    "./js/club.js": "./js/club.js?v=202611020214",
+    "./js/config.js": "./js/config.js?v=202611020214",
+    "./js/routemap.js": "./js/routemap.js?v=202611020214",
+    "./js/rutas/api.js": "./js/rutas/api.js?v=202611020214",
+    "./js/rutas/config.js": "./js/rutas/config.js?v=202611020214",
+    "./js/rutas/datasets.js": "./js/rutas/datasets.js?v=202611020214",
+    "./js/rutas/geo.js": "./js/rutas/geo.js?v=202611020214",
+    "./js/rutas/mapstyle.js": "./js/rutas/mapstyle.js?v=202611020214",
+    "./js/rutas/planner.js": "./js/rutas/planner.js?v=202611020214",
+    "./js/site.js": "./js/site.js?v=202611020214"
   }
 }
 </script>
-<script type="module" src="js/site.js?v=202611020201"></script>
-<script type="module" src="js/admin.js?v=202611020201"></script>
+<script type="module" src="js/site.js?v=202611020214"></script>
+<script type="module" src="js/admin.js?v=202611020214"></script>
 </body>
 </html>

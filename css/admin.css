@@ -341,3 +341,8 @@ body.is-admin #admin { display: block; }
 .checked-row span { color: var(--muted); font-size: 13px; text-align: right; }
 
 @media (min-width: 900px) { [data-mobile-only] { display: none; } }
+
+.vote-status { padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line-strong); font-size: 13px; color: var(--muted); line-height: 1.5; margin-top: -4px; }
+.vote-status b { color: var(--text); font-weight: 500; }
+.vote-status.open { border-color: rgba(47,214,160,.4); background: rgba(47,214,160,.05); }
+.vote-status.open b { color: var(--emerald); }

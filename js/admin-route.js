@@ -159,7 +159,14 @@ function bars(title, options, key) {
 
 function renderVotes() {
   const n = voters().length;
-  $("#votes", root).innerHTML = `<p class="chart-note">${n ? `${n} ${n === 1 ? "persona ha votado" : "personas han votado"}.` : "Aún no ha votado nadie: la propuesta usa valores por defecto."}</p>
+  const e = state.event;
+  const open = !e.routes?.length && Date.now() < new Date(e.votes_close_at).getTime();
+  const late = state.signups.filter((s) => !s.walk_in && !s.distance).length;
+  const when = fmtDate(e.votes_close_at, { weekday: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  $("#votes", root).innerHTML = `<div class="vote-status ${open ? "open" : ""}">${open
+      ? `<b>Votación abierta</b> hasta el ${esc(when)} · ${esc(untilText(e.votes_close_at))}`
+      : `<b>Votación cerrada</b> ${e.routes?.length && Date.now() < new Date(e.votes_close_at).getTime() ? "al publicar la ruta" : `desde el ${esc(when)}`}: estos votos son los definitivos.`}</div>
+    <p class="chart-note">${n ? `${n} ${n === 1 ? "persona ha votado" : "personas han votado"}.` : "Aún no ha votado nadie: la propuesta usa valores por defecto."}${late ? ` ${late} ${late === 1 ? "se apuntó" : "se apuntaron"} después del cierre, sin votar.` : ""}</p>
     ${bars("Distancia", distanceOptions(maxKm()), "distance")}
     ${bars("Intensidad", INTENSITIES, "intensity")}
     ${bars("Ritmo", PACES, "pace")}`;
@@ -170,6 +177,12 @@ function renderVotes() {
       ? `<p><b>Dos recorridos</b>, porque los votos están divididos. Corta de <b>${kmText(p.km[0])} km</b> para los ritmos tranquilo y medio (≈ ${t(p.km[0], "tranquilo")} min a ritmo tranquilo) y larga de <b>${kmText(p.km[1])} km</b> para el rápido (≈ ${t(p.km[1], "rapido")} min). Así llegáis casi a la vez al post-run.</p>`
       : `<p>Una ruta de <b>${kmText(p.km[0])} km</b>, intensidad <b>${INTENSITIES[p.intensity].label.toLowerCase()}</b>${n ? " (la mediana y lo más votado)" : ""}.</p>`}
     <button class="btn-line small" type="button" id="use-proposal">Usar propuesta</button>`;
+}
+
+function untilText(iso) {
+  const min = Math.max(0, Math.round((new Date(iso) - Date.now()) / 60000));
+  const d = Math.floor(min / 1440), h = Math.floor((min % 1440) / 60), m = min % 60;
+  return d ? `quedan ${d} d ${h} h` : h ? `quedan ${h} h ${m} min` : `quedan ${m} min`;
 }
 
 const snap = (km) => Math.min(maxKm(), Math.max(MIN_KM, Math.round(km * 2) / 2));
@@ -333,6 +346,9 @@ function renderPublish() {
 }
 
 async function publish() {
+  const e = state.event;
+  if (!e.routes?.length && Date.now() < new Date(e.votes_close_at).getTime()
+    && !confirm(`La votación sigue abierta (${untilText(e.votes_close_at)}). Si publicas ahora, se cierra y los que se apunten ya no votarán. ¿Publicar?`)) return;
   const routes = ui.slots.slice(0, ui.two ? 2 : 1).map((s, i) => toPublic(s.chosen, i));
   try {
     await api(`/events/${encodeURIComponent(state.event.slug)}/routes`, { method: "PUT", body: JSON.stringify({ routes }) });

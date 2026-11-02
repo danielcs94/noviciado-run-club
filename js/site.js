@@ -21,6 +21,8 @@ async function loadEvent() {
   renderEvent();
   renderRoute();
   buildQuiz();
+  renderVoting();
+  startCountdown();
 }
 
 function renderNoEvent() {
@@ -63,6 +65,62 @@ function animateNumber(el, to) {
     if (p < 1) requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
+}
+
+// ---------- Votación y cuenta atrás ----------
+// De lunes a viernes se vota la ruta; después solo se inscribe (así da tiempo a publicarla).
+const votingOpen = () => event?.voting_open && Date.now() < new Date(event.votes_close_at).getTime();
+
+function renderVoting() {
+  const open = votingOpen();
+  $("#vote-fields").hidden = !open;
+  const closed = $("#vote-closed");
+  closed.hidden = open;
+  closed.textContent = event.routes?.length
+    ? "La ruta ya está publicada: la tienes en la ficha de la carrera. Solo dinos tu ritmo."
+    : "La votación de la ruta ya está cerrada. Te apuntas igual y publicamos el recorrido antes de la salida.";
+  if (!event.routes?.length) {
+    $("#route-empty-text").innerHTML = open
+      ? `<b style="color:var(--text);font-weight:500">La ruta la decidimos entre todos.</b> Cuando te apuntas, votas cuánto quieres correr y cómo de dura la quieres. Se puede votar hasta el ${esc(closeText())}; después publicamos aquí el recorrido, con el mapa, el desnivel y el enlace para llevarlo en el móvil.`
+      : `<b style="color:var(--text);font-weight:500">Votación cerrada.</b> Estamos trazando la ruta con lo que habéis votado y la publicaremos aquí antes de la salida. Aún puedes apuntarte.`;
+    $("#route-empty-btn").textContent = open ? "Apúntate y vota" : "Apúntate";
+  }
+}
+
+const closeText = () => `${fmtDate(event.votes_close_at, { weekday: "long", day: "numeric" })} a las ${fmtDate(event.votes_close_at, { hour: "2-digit", minute: "2-digit" })}`;
+
+let countdownTimer = null;
+function startCountdown() {
+  clearInterval(countdownTimer);
+  tick();
+  countdownTimer = setInterval(tick, 1000);
+}
+
+function tick() {
+  const box = $("#countdown");
+  const now = Date.now();
+  const start = new Date(event.starts_at).getTime();
+  if (now >= start) { box.hidden = true; clearInterval(countdownTimer); return; }
+  const open = votingOpen();
+  // Si la votación se cierra con la página abierta, el formulario pasa a "solo inscribirse"
+  if (event.voting_open && !open) { event.voting_open = false; renderVoting(); validateStep2(); }
+  const target = open ? new Date(event.votes_close_at).getTime() : start;
+  box.hidden = false;
+  box.classList.toggle("closed", !open && !event.routes?.length);
+  $("#countdown-label").textContent = open ? "Votación de la ruta · cierra en" : "Salida en";
+  $("#countdown-value").innerHTML = span(target - now);
+  $("#countdown-note").textContent = open
+    ? `Hasta el ${closeText()}. Después solo inscripción.`
+    : event.routes?.length ? "La ruta ya está publicada: mírala más abajo" : "Votación cerrada · publicamos la ruta antes de la salida";
+}
+
+// 2 d 14 h 05 min; el último día, con segundos
+function span(ms) {
+  const t = Math.max(0, Math.floor(ms / 1000));
+  const d = Math.floor(t / 86400), h = Math.floor((t % 86400) / 3600), m = Math.floor((t % 3600) / 60), sec = t % 60;
+  const part = (n, u) => `${n}<span>${u}</span>`;
+  const pad = (n) => String(n).padStart(2, "0");
+  return d ? `${part(d, "d")}${part(h, "h")}${part(pad(m), "min")}` : `${part(h, "h")}${part(pad(m), "min")}${part(pad(sec), "s")}`;
 }
 
 // ---------- Ruta publicada ----------
@@ -160,7 +218,7 @@ function setStep(n) {
   $("#step-1").hidden = n !== 1;
   $("#step-2").hidden = n !== 2;
   $("#stepper-2").classList.toggle("on", n === 2);
-  $("#sheet-step").textContent = n === 1 ? "Paso 1 de 2 · Tus datos" : "Paso 2 de 2 · Tu ruta";
+  $("#sheet-step").textContent = n === 1 ? "Paso 1 de 2 · Tus datos" : votingOpen() ? "Paso 2 de 2 · Tu ruta" : "Paso 2 de 2 · Tu ritmo";
   sheet.scrollTop = 0;
   if (n === 2) validateStep2();
 }
@@ -210,7 +268,8 @@ function validateStep1() {
 }
 
 function validateStep2() {
-  const ok = ["pace", "intensity", "distance"].every((n) => form.querySelector(`input[name="${n}"]:checked`))
+  const needed = votingOpen() ? ["pace", "intensity", "distance"] : ["pace"];
+  const ok = needed.every((n) => form.querySelector(`input[name="${n}"]:checked`))
     && form.terms.checked && event?.left > 0;
   $("#submit").disabled = !ok;
   return ok;
@@ -236,7 +295,8 @@ form.addEventListener("submit", async (e) => {
   const data = {
     name: fd.get("name"), email: fd.get("email"), phone: fd.get("phone"),
     gender: fd.get("gender") || null,
-    pace: fd.get("pace"), intensity: fd.get("intensity"), distance: fd.get("distance"),
+    pace: fd.get("pace"),
+    ...(votingOpen() ? { intensity: fd.get("intensity"), distance: fd.get("distance") } : {}),
     terms: true,
   };
   const submit = $("#submit");

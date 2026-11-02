@@ -154,10 +154,12 @@ function mount() {
               <div class="field wide"><input id="ev-f-place" name="meeting_point" placeholder=" " required maxlength="120"><label for="ev-f-place">Punto de encuentro</label></div>
               <div class="field"><input id="ev-f-cap" name="capacity" type="number" min="1" max="2000" placeholder=" " required><label for="ev-f-cap">Aforo</label></div>
               <div class="field"><input id="ev-f-km" name="max_km" type="number" min="3" max="15" step="0.5" placeholder=" " required><label for="ev-f-km">Distancia máxima (km)</label></div>
+              <div class="field"><input id="ev-f-cdate" name="close_date" type="date" placeholder=" " required><label for="ev-f-cdate">Cierre de la votación</label></div>
+              <div class="field"><input id="ev-f-ctime" name="close_time" type="time" placeholder=" " required><label for="ev-f-ctime">Hora de cierre</label></div>
               <p class="form-error wide" id="event-error" role="alert" hidden></p>
               <button class="btn-gold wide" type="submit" id="event-save">Guardar</button>
             </form>
-            <p class="note" style="text-align:left;margin-top:16px">La web siempre muestra el próximo evento. La distancia máxima marca los tramos del cuestionario y el límite del generador de rutas.</p>
+            <p class="note" style="text-align:left;margin-top:16px">La web siempre muestra el próximo evento. La distancia máxima marca los tramos del cuestionario y el límite del generador de rutas. Hasta el cierre de la votación la gente vota la ruta; después solo se inscribe, para que te dé tiempo a publicarla (por defecto, dos días antes a las 23:59). Publicar la ruta también cierra la votación.</p>
           </section>
         </div>
       </div>
@@ -418,6 +420,7 @@ const phone = (p) => p.replace(/^(\+\d{2})?(\d{3})(\d{3})(\d{3})$/, (_, c, a, b,
 
 function voteText(s) {
   if (s.walk_in) return "Sin inscripción";
+  if (!s.distance) return "Tras el cierre";
   const d = distanceOptions(state.event.max_km)[s.distance];
   return `${INTENSITIES[s.intensity]?.label ?? "—"} · ${d ? d.label : "—"}`;
 }
@@ -540,24 +543,44 @@ function fillEventForm(e) {
   $("#event-new").hidden = !e;
   const f = $("#event-form");
   if (e) {
-    const d = new Date(e.starts_at);
-    // Fecha y hora de Madrid para los campos (que trabajan en hora local del navegador)
-    const parts = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
-      .formatToParts(d).map((p) => [p.type, p.value]));
+    const start = madridParts(e.starts_at), close = madridParts(e.votes_close_at);
     f.title.value = e.title;
-    f.date.value = `${parts.year}-${parts.month}-${parts.day}`;
-    f.time.value = `${parts.hour}:${parts.minute}`;
+    f.date.value = start.date;
+    f.time.value = start.time;
     f.meeting_point.value = e.meeting_point;
     f.capacity.value = e.capacity;
     f.max_km.value = e.max_km;
+    f.close_date.value = close.date;
+    f.close_time.value = close.time;
+    closeTouched = true;
   } else {
     f.reset();
     f.time.value = "09:30";
     f.meeting_point.value = "Noviciado Coffee Shop, calle del Noviciado 9, Madrid";
     f.capacity.value = 60;
     f.max_km.value = 10;
+    f.close_time.value = "23:59";
+    closeTouched = false;
   }
   showFormError($("#event-error"), "");
+}
+
+// Fecha y hora de Madrid para los campos (que trabajan en hora local del navegador)
+function madridParts(iso) {
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+    .formatToParts(new Date(iso)).map((x) => [x.type, x.value]));
+  return { date: `${p.year}-${p.month}-${p.day}`, time: `${p.hour}:${p.minute}` };
+}
+
+// En un evento nuevo, el cierre sigue a la fecha (dos días antes) hasta que lo cambias a mano
+let closeTouched = false;
+function suggestClose() {
+  const f = $("#event-form");
+  if (closeTouched || !f.date.value) return;
+  const d = new Date(`${f.date.value}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - 2);
+  f.close_date.value = d.toISOString().slice(0, 10);
+  f.close_time.value = "23:59";
 }
 
 // Convierte día + hora de Madrid a ISO en UTC, sin depender de la zona del navegador
@@ -572,12 +595,14 @@ async function saveEvent(ev) {
   ev.preventDefault();
   const f = ev.target;
   if (!f.date.value || !f.time.value) return showFormError($("#event-error"), "Indica el día y la hora.");
+  if (!f.close_date.value || !f.close_time.value) return showFormError($("#event-error"), "Indica cuándo se cierra la votación.");
   const data = {
     title: f.title.value.trim(),
     starts_at: madridToIso(f.date.value, f.time.value),
     meeting_point: f.meeting_point.value.trim(),
     capacity: Number(f.capacity.value),
     max_km: Number(f.max_km.value),
+    votes_close_at: madridToIso(f.close_date.value, f.close_time.value),
   };
   const btn = $("#event-save");
   btn.disabled = true;
@@ -689,6 +714,8 @@ function bind() {
   $("#mail-send").addEventListener("click", sendMail);
   $("#event-form").addEventListener("submit", saveEvent);
   $("#event-new").addEventListener("click", () => fillEventForm(null));
+  $("#ev-f-date").addEventListener("change", suggestClose);
+  ["#ev-f-cdate", "#ev-f-ctime"].forEach((id) => $(id).addEventListener("input", () => { closeTouched = true; }));
 
   document.querySelectorAll("[data-close-login]").forEach((b) => b.addEventListener("click", () => closeModal($("#login-modal"))));
   document.querySelectorAll("[data-close-mail]").forEach((b) => b.addEventListener("click", () => closeModal($("#mail-modal"))));

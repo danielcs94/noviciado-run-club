@@ -26,7 +26,7 @@ interface Env {
 
 interface EventRow {
   id: number; slug: string; title: string; starts_at: string; meeting_point: string;
-  capacity: number; max_km: number; routes: string | null; routes_published_at: string | null;
+  capacity: number; max_km: number; routes: string | null; routes_published_at: string | null; votes_close_at: string | null;
 }
 interface MemberRow { id: number; code: string; secret: string; name: string; email: string; phone: string; gender: string | null; points: number }
 
@@ -116,7 +116,29 @@ function eventFields(e: EventRow) {
   return {
     slug: e.slug, title: e.title, starts_at: e.starts_at, meeting_point: e.meeting_point,
     capacity: e.capacity, max_km: e.max_km, routes_published_at: e.routes_published_at,
+    votes_close_at: votesCloseAt(e), voting_open: votingOpen(e),
   };
+}
+
+// La votación da tiempo a publicar la ruta: por defecto cierra a las 23:59 (Madrid) dos días antes
+// del evento (domingo → viernes noche). Al publicar la ruta se cierra aunque no haya llegado la hora.
+function votesCloseAt(e: Pick<EventRow, 'starts_at' | 'votes_close_at'>) {
+  if (e.votes_close_at) return e.votes_close_at;
+  const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit' })
+    .format(new Date(e.starts_at));
+  const d = new Date(`${day}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - 2);
+  return madridToIso(d.toISOString().slice(0, 10), '23:59');
+}
+
+const votingOpen = (e: EventRow) => !e.routes && Date.now() < new Date(votesCloseAt(e)).getTime();
+
+// Día y hora de Madrid → ISO en UTC (sirve en invierno y en verano)
+function madridToIso(date: string, time: string) {
+  const guess = new Date(`${date}T${time}:00Z`);
+  const local = new Date(guess.toLocaleString('en-US', { timeZone: 'Europe/Madrid' }));
+  const utc = new Date(guess.toLocaleString('en-US', { timeZone: 'UTC' }));
+  return new Date(guess.getTime() - (local.getTime() - utc.getTime())).toISOString();
 }
 
 async function nextEvent(env: Env) {
@@ -176,23 +198,40 @@ function readEventInput(b: Record<string, unknown>, partial: boolean) {
     if (!(k >= MIN_KM && k <= MAX_EVENT_KM)) errors.max_km = `La distancia máxima debe estar entre ${MIN_KM} y ${MAX_EVENT_KM} km.`;
     out.max_km = Math.round(k * 10) / 10;
   }
+  if (has('votes_close_at')) {
+    // null = la hora por defecto (dos días antes)
+    if (b.votes_close_at === null || b.votes_close_at === '') out.votes_close_at = null as unknown as string;
+    else {
+      const d = new Date(String(b.votes_close_at));
+      if (Number.isNaN(d.getTime())) errors.votes_close_at = 'El cierre de la votación no es una fecha válida.';
+      else out.votes_close_at = d.toISOString();
+    }
+  }
   if (Object.keys(errors).length) throw new HttpError(422, Object.values(errors)[0], errors);
   return out;
 }
 
+function checkClose(starts: string, close: string | null | undefined) {
+  if (close && new Date(close) >= new Date(starts)) {
+    throw new HttpError(422, 'La votación tiene que cerrar antes de que empiece el evento.', { votes_close_at: 'La votación tiene que cerrar antes de que empiece el evento.' });
+  }
+}
+
 async function createEvent(request: Request, env: Env) {
   const data = readEventInput(await body(request), false);
+  checkClose(String(data.starts_at), data.votes_close_at as string | null);
   const base = `${slugify(String(data.title))}-${String(data.starts_at).slice(0, 10).replace(/-/g, '')}`;
   let slug = base;
   for (let i = 2; await env.DB.prepare('SELECT 1 FROM events WHERE slug = ?').bind(slug).first(); i++) slug = `${base}-${i}`;
-  await env.DB.prepare('INSERT INTO events (slug, title, starts_at, meeting_point, capacity, max_km) VALUES (?, ?, ?, ?, ?, ?)')
-    .bind(slug, data.title, data.starts_at, data.meeting_point, data.capacity, data.max_km).run();
+  await env.DB.prepare('INSERT INTO events (slug, title, starts_at, meeting_point, capacity, max_km, votes_close_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .bind(slug, data.title, data.starts_at, data.meeting_point, data.capacity, data.max_km, data.votes_close_at ?? null).run();
   return json(201, eventFields(await eventBySlug(env, slug)));
 }
 
 async function updateEvent(request: Request, env: Env, slug: string) {
   const ev = await eventBySlug(env, slug);
   const data = readEventInput(await body(request), true);
+  checkClose(String(data.starts_at ?? ev.starts_at), 'votes_close_at' in data ? (data.votes_close_at as string | null) : ev.votes_close_at);
   const keys = Object.keys(data);
   if (keys.length) {
     await env.DB.prepare(`UPDATE events SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`)
@@ -251,8 +290,10 @@ async function signup(request: Request, env: Env, slug: string) {
   if (!/^\+?\d{9,15}$/.test(phone)) errors.phone = 'El teléfono debe tener entre 9 y 15 cifras.';
   if (gender !== null && !(GENDERS as readonly string[]).includes(gender)) errors.gender = 'Elige una opción de la lista.';
   if (!(PACES as readonly string[]).includes(String(b.pace))) errors.pace = 'Elige tu ritmo.';
-  if (!(INTENSITIES as readonly string[]).includes(String(b.intensity))) errors.intensity = 'Elige cómo de intensa quieres la ruta.';
-  if (!(DISTANCES as readonly string[]).includes(String(b.distance))) errors.distance = 'Elige cuánto quieres correr.';
+  // Con la votación cerrada solo se inscribe: los votos que lleguen se ignoran
+  const voting = votingOpen(ev);
+  if (voting && !(INTENSITIES as readonly string[]).includes(String(b.intensity))) errors.intensity = 'Elige cómo de intensa quieres la ruta.';
+  if (voting && !(DISTANCES as readonly string[]).includes(String(b.distance))) errors.distance = 'Elige cuánto quieres correr.';
   if (b.terms !== true) errors.terms = 'Tienes que ser mayor de 18 y aceptar la política de privacidad.';
   if (Object.keys(errors).length) throw new HttpError(422, Object.values(errors)[0], errors);
 
@@ -275,7 +316,7 @@ async function signup(request: Request, env: Env, slug: string) {
     res = await env.DB.prepare(
       `INSERT INTO signups (event_id, member_id, pace, intensity, distance)
        SELECT ?1, ?2, ?3, ?4, ?5 WHERE (SELECT COUNT(*) FROM signups WHERE event_id = ?1 AND walk_in = 0) < ?6`)
-      .bind(ev.id, member.id, b.pace, b.intensity, b.distance, ev.capacity).run();
+      .bind(ev.id, member.id, b.pace, voting ? b.intensity : null, voting ? b.distance : null, ev.capacity).run();
   } catch (e) {
     if (String(e).includes('UNIQUE')) throw new HttpError(422, 'Ya hay una inscripción con este correo.', { email: 'Ya hay una inscripción con este correo.' });
     throw e;
