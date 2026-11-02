@@ -159,6 +159,10 @@ function mount() {
               <p class="form-error wide" id="event-error" role="alert" hidden></p>
               <button class="btn-gold wide" type="submit" id="event-save">Guardar</button>
             </form>
+            <div class="danger-zone" id="event-danger">
+              <div><b>Eliminar este evento</b><small>Se borran el evento, su ruta y sus inscripciones. Los socios conservan su tarjeta y sus puntos.</small></div>
+              <button class="btn-danger" type="button" id="event-delete">Eliminar evento</button>
+            </div>
             <p class="note" style="text-align:left;margin-top:16px">La web siempre muestra el próximo evento. La distancia máxima marca los tramos del cuestionario y el límite del generador de rutas. Hasta el cierre de la votación la gente vota la ruta; después solo se inscribe, para que te dé tiempo a publicarla (por defecto, dos días antes a las 23:59). Publicar la ruta también cierra la votación.</p>
           </section>
         </div>
@@ -541,6 +545,7 @@ function fillEventForm(e) {
   $("#event-form-title").textContent = e ? "Editar evento" : "Nuevo evento";
   $("#event-form-eyebrow").textContent = e ? esc(e.title) : "Evento";
   $("#event-new").hidden = !e;
+  $("#event-danger").hidden = !e;
   const f = $("#event-form");
   if (e) {
     const start = madridParts(e.starts_at), close = madridParts(e.votes_close_at);
@@ -617,6 +622,26 @@ async function saveEvent(ev) {
     toast(isNew ? "Evento creado" : "Evento guardado");
   } catch (e) {
     if (e.message !== "unauthorized") showFormError($("#event-error"), e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function deleteEvent() {
+  const e = state.event;
+  if (!e) return;
+  const n = state.signups.length;
+  const people = n === 1 ? "1 inscripción" : `${n} inscripciones`;
+  if (!confirm(`¿Eliminar «${e.title}» (${fmtDate(e.starts_at, { day: "numeric", month: "long" })})?\n\nSe borrarán el evento, su ruta y ${people}. Los socios conservan su tarjeta y sus puntos.\n\nNo se puede deshacer.`)) return;
+  const btn = $("#event-delete");
+  btn.disabled = true;
+  try {
+    await api(`/events/${encodeURIComponent(e.slug)}`, { method: "DELETE" });
+    state.event = null;
+    toast(`Evento «${e.title}» eliminado`);
+    await enterAdmin(); // vuelve a cargar y elige el próximo evento que quede
+  } catch (err) {
+    if (err.message !== "unauthorized") toast(err.message, "err");
   } finally {
     btn.disabled = false;
   }
@@ -714,6 +739,7 @@ function bind() {
   $("#mail-send").addEventListener("click", sendMail);
   $("#event-form").addEventListener("submit", saveEvent);
   $("#event-new").addEventListener("click", () => fillEventForm(null));
+  $("#event-delete").addEventListener("click", deleteEvent);
   $("#ev-f-date").addEventListener("change", suggestClose);
   ["#ev-f-cdate", "#ev-f-ctime"].forEach((id) => $(id).addEventListener("input", () => { closeTouched = true; }));
 

@@ -346,3 +346,15 @@ body.is-admin #admin { display: block; }
 .vote-status b { color: var(--text); font-weight: 500; }
 .vote-status.open { border-color: rgba(47,214,160,.4); background: rgba(47,214,160,.05); }
 .vote-status.open b { color: var(--emerald); }
+
+/* ---------- Zona peligrosa ---------- */
+.danger-zone { margin-top: 22px; padding: 16px 18px; border-radius: 18px; border: 1px solid rgba(224,128,106,.35); background: rgba(224,128,106,.05); display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between; }
+.danger-zone b { display: block; font-weight: 500; }
+.danger-zone small { display: block; color: var(--muted); font-size: 13px; line-height: 1.5; margin-top: 2px; max-width: 520px; }
+.btn-danger {
+  appearance: none; cursor: pointer; font: inherit; font-size: 12px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--danger); background: transparent; border: 1px solid rgba(224,128,106,.55); border-radius: 999px; padding: 12px 18px;
+  transition: background .2s;
+}
+.btn-danger:hover { background: rgba(224,128,106,.1); }
+.btn-danger:disabled { opacity: .4; cursor: not-allowed; }

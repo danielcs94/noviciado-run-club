@@ -32,7 +32,7 @@ interface MemberRow { id: number; code: string; secret: string; name: string; em
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Max-Age': '86400',
 };
@@ -87,6 +87,7 @@ async function route(request: Request, env: Env, ctx: ExecutionContext): Promise
   }
   if (m === 'POST' && at('admin', 'events')) return createEvent(request, env);
   if (m === 'PATCH' && at('admin', 'events', '*')) return updateEvent(request, env, parts[2]);
+  if (m === 'DELETE' && at('admin', 'events', '*')) return deleteEvent(env, parts[2]);
   if (m === 'GET' && at('admin', 'events', '*', 'signups')) {
     const ev = await eventBySlug(env, parts[2]);
     const { results } = await env.DB.prepare(
@@ -238,6 +239,16 @@ async function updateEvent(request: Request, env: Env, slug: string) {
       .bind(...keys.map((k) => data[k]), ev.id).run();
   }
   return json(200, eventFields(await eventBySlug(env, slug)));
+}
+
+// Borra el evento y sus inscripciones. Los socios y sus puntos se quedan.
+async function deleteEvent(env: Env, slug: string) {
+  const ev = await eventBySlug(env, slug);
+  const [signups] = await env.DB.batch([
+    env.DB.prepare('DELETE FROM signups WHERE event_id = ?').bind(ev.id),
+    env.DB.prepare('DELETE FROM events WHERE id = ?').bind(ev.id),
+  ]);
+  return json(200, { deleted: slug, signups: signups.meta.changes });
 }
 
 function slugify(s: string) {
