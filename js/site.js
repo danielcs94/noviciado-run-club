@@ -123,8 +123,22 @@ function showRouteInfo(i) {
 }
 
 // ---------- Tarjeta de socio (sección informativa) ----------
-$("#levels").innerHTML = LEVELS.map((l) =>
-  `<li><b>${l.name}</b><span>${l.from ? `desde ${l.from} puntos · ${l.from / 10} carreras` : "al apuntarte"}</span></li>`).join("");
+// Al pulsar un nivel, la tarjeta de ejemplo cambia a su color
+$("#levels").innerHTML = LEVELS.map((l, i) =>
+  `<li><button type="button" data-level="${l.key}" aria-pressed="${i === 0}"><b>${l.name}</b><span>${l.from ? `desde ${l.from} puntos · ${l.from / 10} carreras` : "al apuntarte"}</span></button></li>`).join("");
+$("#levels").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-level]");
+  if (!b) return;
+  const level = LEVELS.find((l) => l.key === b.dataset.level);
+  const pass = $("#preview-pass");
+  if (pass.dataset.level === level.key) return;
+  $("#levels").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  pass.dataset.level = level.key;
+  $("#preview-level").textContent = `${level.name} · ${level.from} puntos`;
+  pass.classList.remove("flip");
+  void pass.offsetWidth; // reinicia la animación
+  pass.classList.add("flip");
+});
 
 // ---------- Formulario ----------
 const modal = $("#modal");
