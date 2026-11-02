@@ -1,0 +1,6 @@
+# Copia este archivo como .dev.vars y pon tus valores.
+ADMIN_PASSWORD=una-contraseña-para-el-panel
+TOKEN_SECRET=una-cadena-larga-y-aleatoria
+# BREVO_API_KEY=
+# GW_SA_EMAIL=
+# GW_SA_KEY=

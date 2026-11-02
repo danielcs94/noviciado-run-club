@@ -1,0 +1,33 @@
+{
+  // API del run club: eventos, inscripciones, rutas publicadas, tarjetas de socio y panel de admin.
+  "name": "noviciado-run-club",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  // Dirección fija https://noviciado-run-club.<tu-subdominio>.workers.dev
+  "workers_dev": true,
+  "preview_urls": false,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "noviciado-run-club",
+      // Creada con `npx wrangler d1 create noviciado-run-club`
+      "database_id": "fd272477-9877-42a8-a17c-08299339a3f9",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "vars": {
+    // Dirección pública de la web (para los enlaces de la tarjeta en los correos)
+    "SITE_URL": "https://danielcs94.github.io/noviciado-run-club/",
+    // Remitente de los correos (tiene que estar verificado en Brevo)
+    "MAIL_FROM_EMAIL": "",
+    "MAIL_FROM_NAME": "Noviciado Run Club",
+    // Google Wallet: el número de emisor de https://pay.google.com/business/console
+    "GW_ISSUER_ID": ""
+  }
+  // Secretos (no van aquí, se ponen con `npx wrangler secret put …`; en local, en .dev.vars):
+  //   ADMIN_PASSWORD   contraseña del panel de admin
+  //   TOKEN_SECRET     cadena larga y aleatoria para firmar las sesiones
+  //   BREVO_API_KEY    (opcional) para enviar correos de verdad
+  //   GW_SA_EMAIL      (opcional) correo de la cuenta de servicio de Google Wallet
+  //   GW_SA_KEY        (opcional) su clave privada, el texto que empieza por -----BEGIN PRIVATE KEY-----
+}

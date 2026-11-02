@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0b0c">
+<title>Noviciado Run Club</title>
+<meta name="description" content="Run club de Noviciado Coffee Shop en Malasaña, Madrid. Corremos juntos, volvemos al café y suena el DJ. Gratis.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;0,6..96,700;1,6..96,400&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.css">
+<link rel="stylesheet" href="css/site.css?v=202611020136">
+<link rel="stylesheet" href="css/admin.css?v=202611020136">
+</head>
+<body>
+
+<div class="ticker" aria-hidden="true"><div>
+  <span>Noviciado Run Club</span><span>Corre</span><span>Café</span><span>DJ</span><span>Malasaña</span><span>Nobody is ever really in a hurry</span>
+  <span>Noviciado Run Club</span><span>Corre</span><span>Café</span><span>DJ</span><span>Malasaña</span><span>Nobody is ever really in a hurry</span>
+</div></div>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true">N</div>
+    <span class="brand-name">Run Club</span>
+  </div>
+  <nav class="nav" aria-label="Secciones">
+    <a href="#evento">Evento</a><a href="#ruta">Ruta</a><a href="#post-run">Post-run</a><a href="#tarjeta">Tarjeta</a>
+  </nav>
+  <span class="pill" id="status-pill">Plazas abiertas</span>
+  <a class="my-card" id="my-card" href="tarjeta.html" hidden>Mi tarjeta</a>
+</header>
+
+<main class="wrap">
+
+  <section class="card poster">
+    <span class="eyebrow">Noviciado · Run Club</span>
+    <h1 class="gold-text">Run…</h1>
+    <p class="tagline gold-text">Nobody is ever really in a hurry.</p>
+    <p class="lead">Salimos juntos desde el café, corremos una ruta que eliges tú y volvemos a Noviciado. Allí te espera tu café, algo de beber y un DJ pinchando.</p>
+    <div class="hero-actions">
+      <button class="btn-gold" type="button" data-open>Apúntate</button>
+      <a class="btn-line" href="#ruta">Ver la ruta</a>
+    </div>
+    <svg class="route" viewBox="0 0 280 90" fill="none" aria-hidden="true">
+      <path d="M10 70 C 50 10, 90 10, 120 45 S 190 85, 220 40 S 262 20, 270 30" stroke="url(#g)" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="10" cy="70" r="5" fill="#d9b56a"/>
+      <circle cx="270" cy="30" r="5" stroke="#d9b56a" stroke-width="2"/>
+      <defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#a9843f"/><stop offset="1" stop-color="#f6e2a8"/></linearGradient></defs>
+    </svg>
+    <span class="coords">MADRID · 40.4255° N · 3.7083° O</span>
+  </section>
+
+  <div class="split" id="evento">
+    <section class="card section">
+      <span class="eyebrow">Cómo funciona</span>
+      <h2>Salimos del café,<br>volvemos al café.</h2>
+      <ol class="steps">
+        <li><b>Apúntate y vota</b>Al inscribirte nos dices cuánto quieres correr y cómo de dura quieres la ruta.</li>
+        <li><b>Publicamos la ruta</b>Con lo que vote la gente trazamos el recorrido y lo subimos aquí antes del evento.</li>
+        <li><b>Corre y quédate</b>Volvemos a Noviciado a la vez y empieza el post-run, con el DJ.</li>
+      </ol>
+      <div class="facts">
+        <div class="fact"><b id="fact-km">10</b><span>km máx.</span></div>
+        <div class="fact"><b>3</b><span>ritmos</span></div>
+        <div class="fact"><b>0 €</b><span>siempre</span></div>
+      </div>
+    </section>
+
+    <aside class="aside">
+      <section class="card event">
+        <span class="eyebrow">Próximo evento</span>
+        <div class="date-row">
+          <div class="date-box"><b id="ev-day">—</b><span id="ev-month">&nbsp;</span></div>
+          <div>
+            <span class="eyebrow" id="ev-when">Por anunciar</span>
+            <h3 id="ev-title">Próximamente</h3>
+            <p id="ev-place">Noviciado Coffee Shop<br>Malasaña, Madrid</p>
+          </div>
+        </div>
+
+        <div class="counter">
+          <div class="counter-top"><b class="gold-text" id="count">0</b><span>de <span id="cap">—</span> plazas reservadas</span></div>
+          <div class="bar"><i id="bar"></i></div>
+          <small id="left"></small>
+        </div>
+
+        <div class="ticket">
+          <div>
+            <span class="eyebrow">Entrada gratuita</span>
+            <h4>Run + post-run</h4>
+            <p>Gratis · plazas limitadas</p>
+          </div>
+          <button class="btn-gold btn-round" type="button" data-open aria-label="Reservar mi plaza">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+        <p class="note">Te enviamos la invitación al correo.</p>
+      </section>
+    </aside>
+  </div>
+
+  <section class="card route-card" id="ruta">
+    <div class="section">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">Ficha de la carrera</span>
+          <h2 id="route-title">El recorrido</h2>
+        </div>
+        <div class="tabs" id="route-tabs" role="tablist" hidden></div>
+      </div>
+    </div>
+    <div id="route-body">
+      <div class="route-empty">
+        <svg viewBox="0 0 280 90" fill="none" aria-hidden="true"><path d="M10 70 C 50 10, 90 10, 120 45 S 190 85, 220 40 S 262 20, 270 30" stroke="#5f5c57" stroke-width="2" stroke-dasharray="4 8" stroke-linecap="round"/><circle cx="10" cy="70" r="5" fill="#d9b56a"/></svg>
+        <p><b style="color:var(--text);font-weight:500">La ruta la decidimos entre todos.</b> Cuando te apuntas, votas cuánto quieres correr y cómo de dura la quieres. Unos días antes del evento publicamos aquí el recorrido, con el mapa, el desnivel y el enlace para llevarlo en el móvil.</p>
+        <button class="btn-line small" type="button" data-open>Apúntate y vota</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card section" id="post-run">
+    <span class="eyebrow">Post-run</span>
+    <h2>La carrera dura una hora.<br>El post-run, toda la mañana.</h2>
+    <p>Correr es la excusa. Al volver, Noviciado es nuestro: pides lo tuyo, te quedas a charlar y suena música en directo.</p>
+    <div class="tiles">
+      <div class="tile">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17M8 3c0 1.5 1 1.5 1 3M12 3c0 1.5 1 1.5 1 3"/></svg>
+        <h3>Café de especialidad</h3>
+        <p>Recién hecho, para recuperar el aliento.</p>
+      </div>
+      <div class="tile">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l-1.5 17a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1z"/><path d="M6.5 8h11"/></svg>
+        <h3>Algo de beber</h3>
+        <p>Zumos, refrescos y lo que te pida el cuerpo después de correr.</p>
+      </div>
+      <div class="tile">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3a9 9 0 0 1 9 9" stroke-linecap="round"/></svg>
+        <h3>DJ en directo</h3>
+        <p>Música desde que llega el primero hasta que se va el último.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card section" id="tarjeta">
+    <div class="member">
+      <div>
+        <span class="eyebrow">Tarjeta de socio</span>
+        <h2>Cada carrera suma.</h2>
+        <p>Al apuntarte por primera vez te llevas tu tarjeta del club. Enséñala al llegar a cada quedada: escaneamos tu código y sumas <b style="color:var(--text)">10 puntos</b>. Cuantos más puntos, más nivel.</p>
+        <p>En Android la guardas en Google Wallet; en iPhone, en la pantalla de inicio.</p>
+        <ul class="levels" id="levels"></ul>
+      </div>
+      <div class="pass" aria-hidden="true">
+        <div>
+          <span class="eyebrow">Noviciado Run Club</span>
+          <h4 class="gold-text">Tu nombre</h4>
+          <span class="pass-level">Novicio · 0 puntos</span>
+        </div>
+        <div class="pass-foot">
+          <div><small>Socio</small><b>Desde hoy</b></div>
+          <code>NRC-····</code>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card section faq">
+    <span class="eyebrow">Preguntas frecuentes</span>
+    <div style="margin-top:12px">
+      <details><summary>¿Qué nivel hace falta?</summary><p>Ninguno especial. Hay tres ritmos y, si la gente vota distinto, dos recorridos: uno más corto y otro más largo para los rápidos, para que todos lleguemos a la vez.</p></details>
+      <details><summary>¿Hay que pagar algo?</summary><p>No. Correr es gratis. Solo pedimos que reserves para saber cuántos somos.</p></details>
+      <details><summary>¿Cuándo se publica la ruta?</summary><p>Unos días antes del evento, en esta misma página. Puedes abrirla en Google Maps o descargarla para tu reloj.</p></details>
+      <details><summary>¿Y si llueve?</summary><p>Corremos igual, salvo alerta. Si se cancela, te avisamos por correo.</p></details>
+      <details><summary>¿Dónde quedamos?</summary><p>En la puerta de Noviciado Coffee Shop, calle del Noviciado, Malasaña.</p></details>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="socials">
+      <a href="#" aria-label="Instagram"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6" fill="currentColor"/></svg></a>
+      <a href="#" aria-label="Strava"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M10 3l-6 12h4l2-4 2 4h4z"/><path d="M14 15l2 4 2-4"/></svg></a>
+      <a href="#" aria-label="WhatsApp"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3.5 20.5l1.3-4.2A8.5 8.5 0 1 1 8 19.4z"/><path d="M9 8.5c0 3.5 3 6.5 6.5 6.5l1-1.6-2-1-1 1c-1.2-.5-2.4-1.7-2.9-2.9l1-1-1-2z"/></svg></a>
+    </div>
+    © 2026 Noviciado Run Club · Calle del Noviciado, Madrid
+  </footer>
+</main>
+
+<div class="dock">
+  <span><b id="dock-title">Run Club</b> · Gratis</span>
+  <button class="btn-gold" type="button" data-open>Reservar</button>
+</div>
+
+<div class="modal" id="modal" aria-hidden="true">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+    <div class="sheet-head">
+      <div>
+        <span class="eyebrow" id="sheet-step">Paso 1 de 2 · Tus datos</span>
+        <h3 id="sheet-title">Run Club</h3>
+      </div>
+      <button class="close" type="button" data-close aria-label="Cerrar">×</button>
+    </div>
+    <div class="stepper" aria-hidden="true"><i class="on"></i><i id="stepper-2"></i></div>
+
+    <form id="form" novalidate>
+      <div class="step" id="step-1">
+        <div class="field">
+          <input id="name" name="name" type="text" autocomplete="name" placeholder=" " required minlength="3" maxlength="80">
+          <label for="name">Nombre y apellido</label>
+        </div>
+        <div class="field">
+          <input id="email" name="email" type="email" autocomplete="email" placeholder=" " required maxlength="120">
+          <label for="email">Correo electrónico</label>
+        </div>
+        <div class="field">
+          <input id="email2" name="email2" type="email" autocomplete="off" placeholder=" " required>
+          <label for="email2">Repite el correo</label>
+        </div>
+        <p class="hint" id="email-hint">Aquí te mandamos la invitación, asegúrate de que está bien.</p>
+        <div class="field">
+          <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder=" " required>
+          <label for="phone">Teléfono</label>
+        </div>
+
+        <span class="eyebrow group-label">Sexo <span class="optional">· opcional</span></span>
+        <div class="chips four" id="gender-chips" role="radiogroup"></div>
+
+        <button class="btn-gold btn-block" type="button" id="next" disabled>Siguiente</button>
+      </div>
+
+      <div class="step" id="step-2" hidden>
+        <span class="eyebrow group-label">Tu ritmo</span>
+        <div class="chips" id="pace-chips" role="radiogroup"></div>
+
+        <span class="eyebrow group-label">¿Cómo de intensa quieres la ruta?</span>
+        <div class="chips" id="intensity-chips" role="radiogroup"></div>
+
+        <span class="eyebrow group-label">¿Cuánto quieres correr?</span>
+        <div class="chips two" id="distance-chips" role="radiogroup"></div>
+        <p class="hint">Con los votos de todos decidimos la ruta. Si hay mucha diferencia, hacemos dos.</p>
+
+        <label class="check"><input type="checkbox" name="terms" required><span>Soy mayor de 18 años y acepto la <a href="#">política de privacidad</a>.</span></label>
+
+        <p class="form-error" id="form-error" role="alert" hidden></p>
+        <button class="btn-gold btn-block" type="submit" id="submit" disabled>Reservar mi plaza</button>
+        <button class="link-back" type="button" id="back">← Volver a tus datos</button>
+      </div>
+    </form>
+
+    <div class="done" aria-live="polite">
+      <div class="pass">
+        <div>
+          <span class="eyebrow">Noviciado Run Club</span>
+          <h4 class="gold-text" id="pass-name"></h4>
+          <span class="pass-level" id="pass-level"></span>
+        </div>
+        <div class="pass-foot">
+          <div><small>Evento</small><b id="pass-event"></b></div>
+          <code id="pass-code"></code>
+        </div>
+      </div>
+      <h3>Nos vemos en la salida.</h3>
+      <p id="done-text"></p>
+      <div class="actions">
+        <a class="btn-gold btn-block" id="done-card" href="#" hidden>Guardar mi tarjeta</a>
+        <button class="btn-line" type="button" id="done-wallet" hidden>Añadir a Google Wallet</button>
+        <button class="btn-line" type="button" data-close>Hecho</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "./js/admin-checkin.js": "./js/admin-checkin.js?v=202611020136",
+    "./js/admin-route.js": "./js/admin-route.js?v=202611020136",
+    "./js/admin.js": "./js/admin.js?v=202611020136",
+    "./js/card.js": "./js/card.js?v=202611020136",
+    "./js/club.js": "./js/club.js?v=202611020136",
+    "./js/config.js": "./js/config.js?v=202611020136",
+    "./js/routemap.js": "./js/routemap.js?v=202611020136",
+    "./js/rutas/api.js": "./js/rutas/api.js?v=202611020136",
+    "./js/rutas/config.js": "./js/rutas/config.js?v=202611020136",
+    "./js/rutas/datasets.js": "./js/rutas/datasets.js?v=202611020136",
+    "./js/rutas/geo.js": "./js/rutas/geo.js?v=202611020136",
+    "./js/rutas/mapstyle.js": "./js/rutas/mapstyle.js?v=202611020136",
+    "./js/rutas/planner.js": "./js/rutas/planner.js?v=202611020136",
+    "./js/site.js": "./js/site.js?v=202611020136"
+  }
+}
+</script>
+<script type="module" src="js/site.js?v=202611020136"></script>
+<script type="module" src="js/admin.js?v=202611020136"></script>
+</body>
+</html>

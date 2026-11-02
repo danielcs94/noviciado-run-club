@@ -1,0 +1,3 @@
+.DS_Store
+# El backend de Laravel de la primera versión: ya no se usa (lo sustituye api/)
+backend/
