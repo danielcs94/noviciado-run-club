@@ -88,7 +88,7 @@ body::before {
 
 /* ---------- Layout ---------- */
 .wrap {
-  max-width: 1560px; margin: 0 auto;
+  max-width: 1280px; margin: 0 auto;
   padding: 20px 16px 140px;
   display: grid; gap: 20px;
 }
