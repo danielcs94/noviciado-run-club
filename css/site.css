@@ -130,7 +130,7 @@ body::before {
   font-size: clamp(20px, 4.6vw, 30px); margin: 0;
 }
 .poster .route {
-  margin-top: 34px; width: min(280px, 70%); opacity: .9;
+  margin-top: 40px; width: min(520px, 88%); opacity: .9;
 }
 .poster .route path { stroke-dasharray: 6 8; animation: run 30s linear infinite; }
 @keyframes run { to { stroke-dashoffset: -600; } }
