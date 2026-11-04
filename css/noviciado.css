@@ -1,9 +1,9 @@
 /* Noviciado theme layer.
    Loaded after site.css and admin.css. It maps the run club onto the member
-   portal's look (noviciado.com/members): the portal's palette, square corners,
-   thin gold outlines instead of gold-gradient pills, spaced uppercase labels.
-   Round things that are round on purpose (avatars, map pins, status dots,
-   switches, the scanner's camera frame) keep their shape. */
+   portal's look (noviciado.com/members): the portal's palette, thin gold
+   outlines instead of gold-gradient pills, spaced uppercase labels.
+   Corners stay as site.css and admin.css draw them: the run club keeps its
+   rounded cards and pill buttons. */
 
 :root {
   --bg: #0A0A0A;
@@ -19,7 +19,6 @@
   --gold-lo: #C99A4B;
   --gold-grad: linear-gradient(180deg, #F5E9C7 0%, #E3C37C 50%, #C99A4B 100%);
   --emerald: #34D399;
-  --radius: 0px;
 }
 
 body { background: var(--bg); color: var(--text); }
@@ -32,20 +31,11 @@ body { background: var(--bg); color: var(--text); }
 }
 .brand-name { font-family: var(--serif); letter-spacing: .3em; text-transform: uppercase; color: var(--gold); }
 
-/* Square, outlined surfaces. */
-.card, .sheet, .tile, .fact, .ticket, .pass, .total, .date-box, .my-card, .dock,
-.form-error, .vote-closed, .levels button, .chip span, .field input, .check input,
-.stat, .candidate, .checkin-result, .danger-zone, .gen-map, .preview, .proposal,
-.scanner, .search input, .select, .select-bar, .template span, .tip, .toast,
-.vote-status, .badge, .seg, .seg button, .filter-chips button, .tick, .pin-km {
-  border-radius: 0 !important;
-}
-@media (min-width: 600px) { .sheet { border-radius: 0 !important; } }
+/* Outlined surfaces. */
 .card, .tile, .fact, .stat, .candidate, .ticket, .pass { background: var(--surface); border-color: var(--line); }
 
 /* Buttons: gold outline and gold type, as on the portal. */
 .btn-gold, .btn-line, .btn-ghost, .btn-danger, .pill {
-  border-radius: 0 !important;
   letter-spacing: .2em; text-transform: uppercase;
 }
 .btn-gold {
@@ -56,16 +46,14 @@ body { background: var(--bg); color: var(--text); }
 .pill { letter-spacing: .12em; white-space: nowrap; }
 .btn-line { border-color: var(--line-strong); color: var(--muted); }
 
-/* Tabs and segmented controls: underline-free, square, gold outline on the active one. */
-.tabs, .admin-tabs { border-radius: 0 !important; background: transparent; }
-.tabs button, .admin-tabs button { border-radius: 0 !important; letter-spacing: .12em; text-transform: uppercase; }
+/* Tabs and segmented controls: gold outline on the active one. */
+.tabs, .admin-tabs { background: transparent; }
+.tabs button, .admin-tabs button { letter-spacing: .12em; text-transform: uppercase; }
 .tabs button[aria-selected="true"], .admin-tabs button[aria-selected="true"],
 .seg button[aria-pressed="true"], .seg button.on {
   background: transparent; color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold);
 }
 
-/* Progress bars stay thin and gold but lose the rounded ends. */
-.bar, .bar i, .stepper i, .pace-track, .pace-track i, .day i { border-radius: 0 !important; }
 
 /* Section headings in the portal's spaced serif capitals. */
 .eyebrow { font-family: var(--serif); letter-spacing: .3em; color: var(--gold); }
