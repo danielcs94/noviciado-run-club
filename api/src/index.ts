@@ -23,6 +23,7 @@ interface Env {
   GW_SA_EMAIL?: string;
   GW_SA_KEY?: string;
   ALLOW_LOCAL_ORIGINS?: string;
+  EXTRA_ORIGINS?: string;
 }
 
 interface EventRow {
@@ -35,7 +36,8 @@ interface MemberRow { id: number; code: string; secret: string; name: string; em
 const LOCAL_ORIGIN = /^http:\/\/(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+)(:\d+)?$/;
 function corsFor(request: Request, env: Env): Record<string, string> {
   const origin = request.headers.get('Origin') ?? '';
-  const allowed = origin === new URL(env.SITE_URL).origin || (env.ALLOW_LOCAL_ORIGINS === '1' && LOCAL_ORIGIN.test(origin));
+  const sites = [env.SITE_URL, ...(env.EXTRA_ORIGINS ?? '').split(',')].map((u) => u.trim()).filter(Boolean).map((u) => new URL(u).origin);
+  const allowed = sites.includes(origin) || (env.ALLOW_LOCAL_ORIGINS === '1' && LOCAL_ORIGIN.test(origin));
   return allowed ? { ...CORS, 'Access-Control-Allow-Origin': origin, Vary: 'Origin' } : { ...CORS, Vary: 'Origin' };
 }
 

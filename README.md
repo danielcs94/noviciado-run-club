@@ -47,6 +47,8 @@ npm run deploy
 
 Para la web, crea el repositorio `noviciado-run-club` en GitHub, súbelo y en Settings → Pages elige la rama `main` y la carpeta raíz. Quedará en https://danielcs94.github.io/noviciado-run-club/.
 
+Dominio propio: el archivo `CNAME` pide `runclub.noviciado.com`. En Settings → Pages pon ese dominio en *Custom domain* y marca *Enforce HTTPS* cuando aparezca; Noviciado crea el registro DNS `runclub CNAME danielcs94.github.io` (sin proxy de Cloudflare). La dirección vieja redirige sola a la nueva.
+
 Lo último es entrar al panel y crear el primer evento en la pestaña Evento.
 
 **Antes de cada push** ejecuta `python3 tools/release.py`. GitHub Pages deja que el móvil guarde los archivos 10 minutos y sin versiones puede mezclar archivos viejos y nuevos.
