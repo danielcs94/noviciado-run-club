@@ -17,7 +17,10 @@
   ],
   "vars": {
     // Dirección pública de la web (para los enlaces de la tarjeta en los correos)
-    "SITE_URL": "https://danielcs94.github.io/noviciado-run-club/",
+    "SITE_URL": "https://runclub.noviciado.com/",
+    // Other web origins allowed to call the API (comma-separated). The old
+    // GitHub Pages address stays until everyone has the new one.
+    "EXTRA_ORIGINS": "https://danielcs94.github.io",
     // Remitente de los correos (tiene que estar verificado en Brevo)
     "MAIL_FROM_EMAIL": "",
     "MAIL_FROM_NAME": "Noviciado Run Club",

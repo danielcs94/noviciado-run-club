@@ -4,3 +4,5 @@ TOKEN_SECRET=una-cadena-larga-y-aleatoria
 # BREVO_API_KEY=
 # GW_SA_EMAIL=
 # GW_SA_KEY=
+# Lets the local web (localhost, LAN IPs) call this Worker. Never set it in production.
+ALLOW_LOCAL_ORIGINS=1
