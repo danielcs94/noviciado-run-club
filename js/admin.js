@@ -668,7 +668,8 @@ function exportCsv() {
   const head = ["Nombre", "Correo", "Teléfono", "Sexo", "Ritmo", "Intensidad", "Distancia", "Código", "Puntos", "Inscrito", "Fichado", "Último correo"];
   const data = rows.map((r) => [r.name, r.email, r.phone, GENDERS[r.gender] ?? "", PACES[r.pace]?.label ?? "", INTENSITIES[r.intensity]?.label ?? "",
     dist[r.distance]?.label ?? "", r.code, r.points, r.created_at, r.checked_in_at ?? "", r.last_emailed_at ?? ""]);
-  const cell = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  // A leading = + - @ makes Excel and Sheets run the cell as a formula; the name comes from a public form.
+  const cell = (v) => `"${String(v ?? "").replace(/^[=+\-@\t\r]/, "'$&").replace(/"/g, '""')}"`;
   const csv = [head, ...data].map((r) => r.map(cell).join(";")).join("\n");
   const url = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }));
   Object.assign(document.createElement("a"), { href: url, download: `${state.event.slug}-inscritos.csv` }).click();

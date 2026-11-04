@@ -22,6 +22,7 @@ interface Env {
   GW_ISSUER_ID?: string;
   GW_SA_EMAIL?: string;
   GW_SA_KEY?: string;
+  ALLOW_LOCAL_ORIGINS?: string;
 }
 
 interface EventRow {
@@ -30,8 +31,15 @@ interface EventRow {
 }
 interface MemberRow { id: number; code: string; secret: string; name: string; email: string; phone: string; gender: string | null; points: number }
 
+// Only the site itself may call the API from a browser (and the local dev server).
+const LOCAL_ORIGIN = /^http:\/\/(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+)(:\d+)?$/;
+function corsFor(request: Request, env: Env): Record<string, string> {
+  const origin = request.headers.get('Origin') ?? '';
+  const allowed = origin === new URL(env.SITE_URL).origin || (env.ALLOW_LOCAL_ORIGINS === '1' && LOCAL_ORIGIN.test(origin));
+  return allowed ? { ...CORS, 'Access-Control-Allow-Origin': origin, Vary: 'Origin' } : { ...CORS, Vary: 'Origin' };
+}
+
 const CORS = {
-  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Max-Age': '86400',
@@ -42,18 +50,24 @@ class HttpError extends Error {
 }
 
 const json = (status: number, body: unknown) =>
-  new Response(body === null ? null : JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json; charset=utf-8' } });
+  new Response(body === null ? null : JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
 
 export default {
   async fetch(request, env, ctx): Promise<Response> {
-    if (request.method === 'OPTIONS') return new Response(null, { headers: CORS });
+    const cors = corsFor(request, env);
+    if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
+    let res: Response;
     try {
-      return await route(request, env, ctx);
+      res = await route(request, env, ctx);
     } catch (e) {
-      if (e instanceof HttpError) return json(e.status, { message: e.message, ...(e.errors ? { errors: e.errors } : {}) });
-      console.error(e);
-      return json(500, { message: 'Algo ha fallado en el servidor.' });
+      if (e instanceof HttpError) res = json(e.status, { message: e.message, ...(e.errors ? { errors: e.errors } : {}) });
+      else {
+        console.error(e);
+        res = json(500, { message: 'Algo ha fallado en el servidor.' });
+      }
     }
+    for (const [k, v] of Object.entries(cors)) res.headers.set(k, v);
+    return res;
   },
 } satisfies ExportedHandler<Env>;
 
@@ -262,7 +276,9 @@ async function publishRoutes(request: Request, env: Env, slug: string) {
   const ev = await eventBySlug(env, slug);
   const raw = await request.text();
   if (raw.length > 400_000) throw new HttpError(413, 'La ruta es demasiado grande.');
-  const routes = (JSON.parse(raw || '{}') as { routes?: unknown }).routes;
+  let parsed: { routes?: unknown };
+  try { parsed = JSON.parse(raw || '{}'); } catch { throw new HttpError(400, 'La petición no es válida.'); }
+  const routes = parsed?.routes;
   if (routes === null) {
     await env.DB.prepare('UPDATE events SET routes = NULL, routes_published_at = NULL WHERE id = ?').bind(ev.id).run();
     return json(200, { routes: null });
