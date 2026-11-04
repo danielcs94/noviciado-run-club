@@ -261,7 +261,7 @@ function validateStep1() {
   const okPhone = checkField(f.phone, phoneOk(f.phone.value));
   $("#email-hint").textContent = f.email2.dataset.touched === "1" && f.email2.value && !same
     ? "Los correos no coinciden."
-    : "Aquí te mandamos la invitación, asegúrate de que está bien.";
+    : "Con tu correo te reconocemos como socio, asegúrate de que está bien.";
   const ok = okName && okEmail && okEmail2 && okPhone;
   $("#next").disabled = !ok;
   return ok;
@@ -362,7 +362,8 @@ function showSuccess(b) {
   $("#pass-event").textContent = event.title;
   $("#pass-level").textContent = `${b.level} · ${b.points} puntos`;
   const when = `${fmtDate(event.starts_at, { weekday: "long", day: "numeric" })}, ${fmtDate(event.starts_at, { hour: "2-digit", minute: "2-digit" })}`;
-  const intro = `Te hemos guardado la plaza con ${b.email}. Te esperamos el ${when} en la puerta del café.`;
+  // Mientras no haya correo (falta el dominio), todo lo que necesita lo ve aquí
+  const intro = `Te esperamos en el club el ${when}. Al llegar, di tu nombre y listo.`;
 
   const cardLink = $("#done-card");
   const wallet = $("#done-wallet");
@@ -371,13 +372,13 @@ function showSuccess(b) {
     showMyCardLink();
     cardLink.href = `tarjeta.html?c=${encodeURIComponent(b.card.code)}&k=${encodeURIComponent(b.card.k)}`;
     cardLink.hidden = false;
-    $("#done-text").textContent = `${intro} Esta es tu tarjeta de socio: guárdala y enséñala al llegar para sumar puntos.`;
+    $("#done-text").textContent = `${intro} Esta es tu tarjeta de socio: la tienes siempre arriba a la derecha de la web, en «Mi tarjeta». Enséñala al llegar para sumar puntos.`;
     wallet.hidden = !b.wallet;
     wallet.onclick = () => addToGoogleWallet(b.card, wallet);
   } else {
     cardLink.hidden = true;
     wallet.hidden = true;
-    $("#done-text").textContent = `${intro} Ya eras socio: enseña tu tarjeta de siempre al llegar y sumarás los puntos.`;
+    $("#done-text").textContent = `${intro} Ya eras socio: si guardaste tu tarjeta en este móvil, la tienes arriba a la derecha, en «Mi tarjeta». Enséñala al llegar para sumar puntos.`;
   }
   sheet.classList.add("success");
   sheet.scrollTop = 0;
