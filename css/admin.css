@@ -372,3 +372,7 @@ body.is-admin #admin { display: block; }
   .select-bar .sel-word { display: none; }
   .select-bar .actions button:not(.link-btn) { padding: 11px 16px; letter-spacing: .12em; }
 }
+/* En el móvil caben las cuatro pestañas sin tener que deslizar (antes «Evento» quedaba cortada) */
+@media (max-width: 520px) {
+  .admin-tabs button { flex: 1 1 0; padding: 10px 6px; font-size: 11px; letter-spacing: .06em; }
+}

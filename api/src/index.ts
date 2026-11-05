@@ -262,6 +262,18 @@ async function updateEvent(request: Request, env: Env, slug: string) {
   const ev = await eventBySlug(env, slug);
   const data = readEventInput(await body(request), true);
   checkClose(String(data.starts_at ?? ev.starts_at), 'votes_close_at' in data ? (data.votes_close_at as string | null) : ev.votes_close_at);
+  // Con el evento ya publicado: el aforo no puede quedarse por debajo de quien ya tiene plaza
+  const booked = await bookedCount(env, ev.id);
+  if (data.capacity !== undefined && Number(data.capacity) < booked) {
+    const msg = `Ya hay ${booked} personas apuntadas: el aforo no puede ser menor. Si hace falta, quita inscritos primero.`;
+    throw new HttpError(422, msg, { capacity: msg });
+  }
+  // ...ni la distancia máxima por debajo de la ruta publicada
+  const longest = ev.routes ? Math.max(...(JSON.parse(ev.routes) as { km: number }[]).map((r) => Number(r.km) || 0)) : 0;
+  if (data.max_km !== undefined && Number(data.max_km) + 0.3 < longest) {
+    const msg = `La ruta publicada tiene ${longest.toFixed(1).replace('.', ',')} km: sube la distancia máxima o quita la ruta antes.`;
+    throw new HttpError(422, msg, { max_km: msg });
+  }
   const keys = Object.keys(data);
   if (keys.length) {
     await env.DB.prepare(`UPDATE events SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`)
