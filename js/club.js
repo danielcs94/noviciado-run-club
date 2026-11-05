@@ -36,12 +36,15 @@ export const GENDERS = {
   otro: "Otro",
 };
 
-// Tramos de distancia del cuestionario: el rango del evento (3 km → máximo) partido en tres
+// Tramos de distancia del cuestionario: el rango del evento (3 km → máximo) partido en tres,
+// en kilómetros enteros para que se entiendan a la primera (3–5, 5–8, 8–10).
+// Solo con un máximo muy corto (menos de 6 km) hacen falta medios kilómetros.
 export function distanceOptions(maxKm) {
-  const r = (n) => Math.round(n * 2) / 2;
+  const step = maxKm - MIN_KM >= 3 ? 1 : 0.5;
+  const r = (n) => Math.round(n / step) * step;
   const a = r(MIN_KM + (maxKm - MIN_KM) / 3);
   const b = r(MIN_KM + (2 * (maxKm - MIN_KM)) / 3);
-  const km = (n) => String(n).replace(".", ",");
+  const km = (n) => String(Math.round(n * 10) / 10).replace(".", ",");
   return {
     corta: { label: `${km(MIN_KM)}–${km(a)} km`, hint: "Corta", min: MIN_KM, max: a },
     media: { label: `${km(a)}–${km(b)} km`, hint: "Media", min: a, max: b },
