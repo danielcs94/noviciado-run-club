@@ -367,3 +367,8 @@ body.is-admin #admin { display: block; }
 .reset-result.ok { border-color: rgba(47,214,160,.35); background: rgba(47,214,160,.06); }
 .reset-result.ok b { font-family: ui-monospace, Menlo, monospace; font-weight: 500; font-size: 26px; letter-spacing: .06em; color: var(--text); }
 .reset-result.err { border-color: rgba(255,107,107,.35); color: var(--danger); }
+@media (max-width: 520px) {
+  .select-bar { padding-left: 18px; gap: 8px; }
+  .select-bar .sel-word { display: none; }
+  .select-bar .actions button:not(.link-btn) { padding: 11px 16px; letter-spacing: .12em; }
+}

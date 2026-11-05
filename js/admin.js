@@ -1,7 +1,7 @@
 // Panel de administración del run club, dentro de la misma app (botón de cuenta o #admin).
 // Pestañas: Inscritos (y correos), Ruta (votos + generador), Fichar (tarjetas de socio) y Evento.
 import { API, esc, fmtDate } from "./config.js";
-import { GENDERS, INTENSITIES, PACES, distanceOptions } from "./club.js";
+import { CHECKIN_POINTS, GENDERS, INTENSITIES, PACES, distanceOptions } from "./club.js";
 import { mountRouteTab, renderRouteTab } from "./admin-route.js";
 import { mountCheckinTab, renderCheckinTab, stopScanner } from "./admin-checkin.js";
 import { memberToken, openAccount } from "./account.js";
@@ -171,9 +171,10 @@ function mount() {
     </section>
 
     <div class="select-bar" id="admin-select-bar">
-      <span><b id="admin-sel-count">0</b> seleccionados</span>
+      <span><b id="admin-sel-count">0</b><span class="sel-word"> seleccionados</span></span>
       <div class="actions">
         <button class="link-btn" type="button" id="admin-sel-clear">Quitar</button>
+        <button class="btn-danger" type="button" id="admin-sel-delete">Eliminar</button>
         <button class="btn-gold" type="button" id="admin-sel-mail">Enviar correo</button>
       </div>
     </div>
@@ -261,6 +262,8 @@ async function enterAdmin() {
   try {
     const [config, events, templates] = await Promise.all([api("/me"), api("/events"), api("/emails/templates")]);
     state.config = config;
+    // Sin Brevo no se puede enviar nada: el botón aparece cuando el correo esté configurado
+    $("#admin-sel-mail").hidden = !config.mail;
     state.templates = templates;
     state.events = events;
     renderEventSelect();
@@ -489,6 +492,29 @@ function renderSelection() {
   all.indeterminate = chosen > 0 && chosen < visible.length;
   $("#admin-sel-count").textContent = state.selected.size;
   $("#admin-select-bar").classList.toggle("show", state.tab === "people" && state.selected.size > 0);
+}
+
+// ---------- Eliminar inscripciones ----------
+async function deleteSelected() {
+  const rows = state.signups.filter((s) => state.selected.has(s.id));
+  if (!rows.length) return;
+  const checked = rows.filter((s) => s.checked_in_at).length;
+  const who = rows.length === 1 ? rows[0].name : `${rows.length} personas`;
+  const msg = `¿Quitar a ${who} de «${state.event.title}»?\n\nSe libera su plaza. Siguen siendo socios con su cuenta y su tarjeta.`
+    + (checked ? `\n\n${checked === 1 && rows.length === 1 ? "Ya había fichado" : `${checked} ya habían fichado`}: se les restan los ${CHECKIN_POINTS} puntos de esta carrera.` : "");
+  if (!confirm(msg)) return;
+  const btn = $("#admin-sel-delete");
+  btn.disabled = true;
+  try {
+    const r = await api(`/events/${encodeURIComponent(state.event.slug)}/signups/delete`, { method: "POST", body: JSON.stringify({ ids: rows.map((s) => s.id) }) });
+    state.selected.clear();
+    await Promise.all([reloadSignups(), reloadEvents()]);
+    toast(r.deleted === 1 ? "Inscripción eliminada" : `${r.deleted} inscripciones eliminadas`);
+  } catch (e) {
+    if (e.message !== "unauthorized") toast(e.message, "err");
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // ---------- Correo ----------
@@ -780,6 +806,7 @@ function bind() {
 
   $("#admin-sel-clear").addEventListener("click", () => { state.selected.clear(); renderList(); });
   $("#admin-sel-mail").addEventListener("click", openMail);
+  $("#admin-sel-delete").addEventListener("click", deleteSelected);
   $("#mail-templates").addEventListener("change", loadPreview);
   $("#mail-send").addEventListener("click", sendMail);
   $("#event-form").addEventListener("submit", saveEvent);

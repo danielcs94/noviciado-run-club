@@ -123,6 +123,7 @@ async function route(request: Request, env: Env, ctx: ExecutionContext): Promise
        FROM signups s JOIN members m ON m.id = s.member_id WHERE s.event_id = ? ORDER BY s.created_at DESC`).bind(ev.id).all();
     return json(200, results);
   }
+  if (m === 'POST' && at('admin', 'events', '*', 'signups', 'delete')) return deleteSignups(request, env, parts[2]);
   if (m === 'PUT' && at('admin', 'events', '*', 'routes')) return publishRoutes(request, env, parts[2]);
   if (m === 'POST' && at('admin', 'events', '*', 'checkin')) return checkin(request, env, ctx, parts[2]);
   if (m === 'GET' && at('admin', 'emails', 'templates')) return json(200, TEMPLATES.map(({ key, name, description }) => ({ key, name, description })));
@@ -408,6 +409,25 @@ async function signup(request: Request, env: Env, slug: string) {
     booked,
     capacity: ev.capacity,
   });
+}
+
+// Quita inscripciones de un evento (libera su plaza). El socio y su cuenta se quedan; si ya había
+// fichado, se le restan los puntos de esa carrera para que no cuenten.
+async function deleteSignups(request: Request, env: Env, slug: string) {
+  const ev = await eventBySlug(env, slug);
+  const b = await body(request);
+  const ids = Array.isArray(b.ids) ? b.ids.map(Number) : [];
+  if (!ids.length || ids.length > 500 || ids.some((n) => !Number.isInteger(n))) throw new HttpError(422, 'Elige qué inscripciones quitar.');
+  const marks = ids.map(() => '?').join(',');
+  const { results } = await env.DB.prepare(`SELECT id, member_id, checked_in_at FROM signups WHERE event_id = ? AND id IN (${marks})`)
+    .bind(ev.id, ...ids).all<{ id: number; member_id: number; checked_in_at: string | null }>();
+  if (!results.length) throw new HttpError(404, 'Esas inscripciones ya no existen.');
+  const checked = results.filter((r) => r.checked_in_at).map((r) => r.member_id);
+  await env.DB.batch([
+    ...checked.map((id) => env.DB.prepare('UPDATE members SET points = MAX(0, points - ?) WHERE id = ?').bind(CHECKIN_POINTS, id)),
+    env.DB.prepare(`DELETE FROM signups WHERE event_id = ? AND id IN (${results.map(() => '?').join(',')})`).bind(ev.id, ...results.map((r) => r.id)),
+  ]);
+  return json(200, { deleted: results.length, pointsRemoved: checked.length * CHECKIN_POINTS });
 }
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sin 0/O ni 1/I
