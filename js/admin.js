@@ -4,6 +4,7 @@ import { API, esc, fmtDate } from "./config.js";
 import { GENDERS, INTENSITIES, PACES, distanceOptions } from "./club.js";
 import { mountRouteTab, renderRouteTab } from "./admin-route.js";
 import { mountCheckinTab, renderCheckinTab, stopScanner } from "./admin-checkin.js";
+import { memberToken, openAccount } from "./account.js";
 
 const TOKEN_KEY = "nrc:admin-token";
 const PACE_COLORS = { tranquilo: "#f3dca0", medio: "#d9b56a", rapido: "#9c7a3c" };
@@ -67,7 +68,7 @@ function mount() {
   right.className = "topbar-right";
   pill.replaceWith(right);
   right.append(pill, $("#my-card"));
-  right.insertAdjacentHTML("beforeend", `<button class="account-btn" type="button" id="account-btn" aria-label="Cuenta de administrador">${icons.user}</button>`);
+  right.insertAdjacentHTML("beforeend", `<button class="account-btn" type="button" id="account-btn" aria-label="Tu cuenta">${icons.user}</button>`);
 
   document.body.insertAdjacentHTML("beforeend", `
     <section id="admin" aria-label="Panel de administración">
@@ -222,6 +223,17 @@ function mount() {
   `);
   mountRouteTab($('[data-panel="route"]'));
   mountCheckinTab($('[data-panel="checkin"]'));
+  $('[data-panel="checkin"]').insertAdjacentHTML("beforeend", `
+    <section class="card section reset-card">
+      <span class="eyebrow">Cuentas de socio</span>
+      <h2>Contraseña nueva</h2>
+      <p class="note" style="text-align:left">Para quien la haya olvidado o se hizo socio antes de que hubiera cuentas. Escribe su código o su correo, genera una contraseña y díctasela: entra con ella y la cambia desde su cuenta.</p>
+      <form id="reset-form" class="reset-form" novalidate>
+        <div class="field"><input id="reset-who" placeholder=" " autocomplete="off" required><label for="reset-who">Código (NRC-…) o correo</label></div>
+        <button class="btn-gold" type="submit" id="reset-submit">Generar</button>
+      </form>
+      <div class="reset-result" id="reset-result" hidden></div>
+    </section>`);
 }
 
 // ---------- Navegación ----------
@@ -676,9 +688,41 @@ function exportCsv() {
   URL.revokeObjectURL(url);
 }
 
+// ---------- Contraseña de un socio ----------
+async function resetMemberPassword(e) {
+  e.preventDefault();
+  const who = $("#reset-who").value.trim();
+  const box = $("#reset-result");
+  if (!who) return;
+  if (!confirm(`¿Generar una contraseña nueva para «${who}»? La que tenga dejará de valer.`)) return;
+  const btn = $("#reset-submit");
+  btn.disabled = true;
+  try {
+    const r = await api("/members/password", { method: "POST", body: JSON.stringify({ who }) });
+    box.className = "reset-result ok";
+    box.innerHTML = `<span>${esc(r.name)} · ${esc(r.email)} · <code>${esc(r.code)}</code></span><b>${esc(r.password)}</b><small>Díctasela o enséñasela. No se vuelve a mostrar.</small>`;
+    $("#reset-who").value = "";
+  } catch (err) {
+    if (err.message === "unauthorized") return;
+    box.className = "reset-result err";
+    box.textContent = err.message;
+  } finally {
+    box.hidden = false;
+    btn.disabled = false;
+  }
+}
+
 // ---------- Eventos del DOM ----------
 function bind() {
-  $("#account-btn").addEventListener("click", () => (state.token ? enterAdmin() : openLogin()));
+  // El icono es la cuenta del socio; en tu móvil (con la sesión de admin y sin cuenta de socio) va directo al panel
+  $("#account-btn").addEventListener("click", () => {
+    if (state.token && !memberToken()) return enterAdmin();
+    openAccount({ admin: Boolean(state.token), onAdmin: enterAdmin, onAdminLogin: () => openLogin() });
+  });
+  $("#reset-form").addEventListener("submit", resetMemberPassword);
+  const markSigned = () => $("#account-btn").classList.toggle("signed", Boolean(memberToken()));
+  document.addEventListener("nrc:session", markSigned);
+  markSigned();
   $("#admin-public").addEventListener("click", leaveAdmin);
   $("#admin-logout").addEventListener("click", () => {
     saveToken(null);

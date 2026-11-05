@@ -358,3 +358,12 @@ body.is-admin #admin { display: block; }
 }
 .btn-danger:hover { background: rgba(224,128,106,.1); }
 .btn-danger:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ---------- Contraseña nueva para un socio (pestaña Fichar) ---------- */
+.reset-card { display: grid; gap: 12px; margin-top: 20px; }
+.reset-card h2 { margin: 0; }
+.reset-form { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+.reset-result { display: grid; gap: 6px; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+.reset-result.ok { border-color: rgba(47,214,160,.35); background: rgba(47,214,160,.06); }
+.reset-result.ok b { font-family: ui-monospace, Menlo, monospace; font-weight: 500; font-size: 26px; letter-spacing: .06em; color: var(--text); }
+.reset-result.err { border-color: rgba(255,107,107,.35); color: var(--danger); }

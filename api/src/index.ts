@@ -5,6 +5,9 @@
 //           POST /events/:slug/signups        inscribirse (y hacerse socio la primera vez)
 //           GET  /card/:code?k=…              tarjeta de socio
 //           GET  /card/:code/google?k=…       enlace para añadirla a Google Wallet
+// Socio:    POST /account/login               { email, password } → { token, account }
+//           GET  /account                     sus datos, puntos, tarjeta y carreras (con "Authorization: Bearer <token>")
+//           PUT  /account/password            { current, password } → { token }
 // Admin:    POST /admin/login                 { password } → { token }
 //           todo lo demás de /admin con "Authorization: Bearer <token>"
 import { CHECKIN_POINTS, DISTANCES, GENDERS, INTENSITIES, MAX_EVENT_KM, MIN_KM, PACES, levelFor } from './club';
@@ -30,7 +33,10 @@ interface EventRow {
   id: number; slug: string; title: string; starts_at: string; meeting_point: string;
   capacity: number; max_km: number; routes: string | null; routes_published_at: string | null; votes_close_at: string | null;
 }
-interface MemberRow { id: number; code: string; secret: string; name: string; email: string; phone: string; gender: string | null; points: number }
+interface MemberRow {
+  id: number; code: string; secret: string; name: string; email: string; phone: string; gender: string | null; points: number;
+  password_hash: string | null; created_at: string;
+}
 
 // Only the site itself may call the API from a browser (and the local dev server).
 const LOCAL_ORIGIN = /^http:\/\/(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+)(:\d+)?$/;
@@ -89,6 +95,11 @@ async function route(request: Request, env: Env, ctx: ExecutionContext): Promise
     return json(200, { url: await saveUrl(env, await memberByCard(env, parts[1], url.searchParams.get('k'))) });
   }
 
+  // ---------- Cuenta de socio ----------
+  if (m === 'POST' && at('account', 'login')) return memberLogin(request, env);
+  if (m === 'GET' && at('account')) return json(200, await accountView(env, await requireMember(request, env)));
+  if (m === 'PUT' && at('account', 'password')) return changePassword(request, env);
+
   // ---------- Admin ----------
   if (parts[0] !== 'admin') throw new HttpError(404, 'No existe.');
   if (m === 'POST' && at('admin', 'login')) return login(request, env);
@@ -122,6 +133,7 @@ async function route(request: Request, env: Env, ctx: ExecutionContext): Promise
     return json(200, mail);
   }
   if (m === 'POST' && at('admin', 'emails')) return sendEmails(request, env);
+  if (m === 'POST' && at('admin', 'members', 'password')) return resetPassword(request, env);
 
   throw new HttpError(404, 'No existe.');
 }
@@ -308,16 +320,23 @@ async function signup(request: Request, env: Env, slug: string) {
   const ev = await eventBySlug(env, slug);
   if (new Date(ev.starts_at).getTime() < Date.now()) throw new HttpError(409, 'Este evento ya ha empezado.');
   const b = await body(request);
+  // Con la sesión de socio abierta se apunta con su cuenta y no hace falta repetir sus datos
+  const session = await memberFromAuth(request, env);
 
   const errors: Record<string, string> = {};
   const name = String(b.name ?? '').trim().replace(/\s+/g, ' ');
   const email = String(b.email ?? '').trim().toLowerCase();
   const phone = String(b.phone ?? '').replace(/[\s\-().]/g, '');
   const gender = b.gender ? String(b.gender) : null;
-  if (name.length < 3 || name.length > 80) errors.name = 'Escribe tu nombre y apellido.';
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || email.length > 120) errors.email = 'Ese correo no parece válido.';
-  if (!/^\+?\d{9,15}$/.test(phone)) errors.phone = 'El teléfono debe tener entre 9 y 15 cifras.';
-  if (gender !== null && !(GENDERS as readonly string[]).includes(gender)) errors.gender = 'Elige una opción de la lista.';
+  const password = String(b.password ?? '');
+  if (!session) {
+    if (name.length < 3 || name.length > 80) errors.name = 'Escribe tu nombre y apellido.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || email.length > 120) errors.email = 'Ese correo no parece válido.';
+    if (!/^\+?\d{9,15}$/.test(phone)) errors.phone = 'El teléfono debe tener entre 9 y 15 cifras.';
+    if (gender !== null && !(GENDERS as readonly string[]).includes(gender)) errors.gender = 'Elige una opción de la lista.';
+    const pwError = passwordProblem(password);
+    if (pwError) errors.password = pwError;
+  }
   if (!(PACES as readonly string[]).includes(String(b.pace))) errors.pace = 'Elige tu ritmo.';
   // Con la votación cerrada solo se inscribe: los votos que lleguen se ignoran
   const voting = votingOpen(ev);
@@ -326,17 +345,37 @@ async function signup(request: Request, env: Env, slug: string) {
   if (b.terms !== true) errors.terms = 'Tienes que ser mayor de 18 y aceptar la política de privacidad.';
   if (Object.keys(errors).length) throw new HttpError(422, Object.values(errors)[0], errors);
 
-  // Socio: si el correo ya existe se reutiliza su tarjeta (sin tocar sus datos, que podría no ser él)
-  let member = await env.DB.prepare('SELECT * FROM members WHERE email = ?').bind(email).first<MemberRow>();
+  // Socio: con sesión, el de la sesión. Si el correo ya existe, solo entra quien sepa su contraseña
+  // (o, si es un socio de antes sin contraseña, quien tenga su tarjeta guardada en el móvil).
+  let member = session ?? await env.DB.prepare('SELECT * FROM members WHERE email = ?').bind(email).first<MemberRow>();
   const isNew = !member;
+  let signedIn = Boolean(session);
+  if (member && !session) {
+    if (member.password_hash) {
+      if (!(await verifyPassword(password, member.password_hash, env))) {
+        const msg = 'Ya hay una cuenta con este correo y la contraseña no coincide.';
+        throw new HttpError(422, msg, { password: msg });
+      }
+      signedIn = true;
+    } else if (typeof b.card_k === 'string' && b.card_k && await safeEqual(member.secret, b.card_k, env)) {
+      member = await env.DB.prepare('UPDATE members SET password_hash = ? WHERE id = ? RETURNING *')
+        .bind(await hashPassword(password), member.id).first<MemberRow>() ?? member;
+      signedIn = true;
+    }
+    // Si no, se apunta igual con su tarjeta de siempre, pero sin cuenta: se la activa el club
+  }
   if (!member) {
+    const hash = await hashPassword(password);
     for (let i = 0; i < 5 && !member; i++) {
       member = await env.DB.prepare(
-        'INSERT INTO members (code, secret, name, email, phone, gender) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING RETURNING *')
-        .bind(newCode(), randomToken(18), name, email, phone, gender).first<MemberRow>();
-      member ??= await env.DB.prepare('SELECT * FROM members WHERE email = ?').bind(email).first<MemberRow>();
+        'INSERT INTO members (code, secret, name, email, phone, gender, password_hash) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING RETURNING *')
+        .bind(newCode(), randomToken(18), name, email, phone, gender, hash).first<MemberRow>();
+      if (!member && await env.DB.prepare('SELECT 1 FROM members WHERE email = ?').bind(email).first()) {
+        throw new HttpError(409, 'Se acaba de crear una cuenta con este correo. Vuelve a intentarlo.');
+      }
     }
     if (!member) throw new HttpError(500, 'No se pudo crear tu tarjeta. Inténtalo de nuevo.');
+    signedIn = true;
   }
 
   // Inserta solo si queda aforo: la comprobación y el alta van en la misma sentencia
@@ -360,9 +399,12 @@ async function signup(request: Request, env: Env, slug: string) {
     points: member.points,
     level: levelFor(member.points).name,
     newMember: isNew,
-    // El enlace a la tarjeta solo se da al crearla: si no, cualquiera que sepa tu correo la vería
-    card: isNew ? { code: member.code, k: member.secret } : null,
-    wallet: isNew && walletEnabled(env),
+    // La sesión y la tarjeta solo para quien ha demostrado que es él (contraseña, sesión o tarjeta).
+    // Si no, cualquiera que supiera su correo las vería.
+    token: signedIn ? await memberToken(env, member) : null,
+    card: signedIn ? { code: member.code, k: member.secret } : null,
+    wallet: signedIn && walletEnabled(env),
+    accountPending: !signedIn,
     booked,
     capacity: ev.capacity,
   });
@@ -417,6 +459,64 @@ async function checkin(request: Request, env: Env, ctx: ExecutionContext, slug: 
     already: false, name: m.name, code: m.code, points: updated!.points, level: after.name,
     levelUp: after.key !== before.key, walkIn, added: CHECKIN_POINTS,
   });
+}
+
+// ---------------------------------------------------------------------------
+// Cuenta de socio
+// ---------------------------------------------------------------------------
+async function memberLogin(request: Request, env: Env) {
+  await rateLimit(env, `account-login:${clientIp(request)}`, 5);
+  const b = await body(request);
+  const email = String(b.email ?? '').trim().toLowerCase();
+  const password = String(b.password ?? '');
+  await rateLimit(env, `account-login:${email}`, 5);
+  const m = await env.DB.prepare('SELECT * FROM members WHERE email = ?').bind(email).first<MemberRow>();
+  // El mismo mensaje exista o no el correo, para no descubrir quién es socio
+  if (!m?.password_hash || !(await verifyPassword(password, m.password_hash, env))) {
+    throw new HttpError(422, 'El correo o la contraseña no son correctos.');
+  }
+  return json(200, { token: await memberToken(env, m), account: await accountView(env, m) });
+}
+
+async function accountView(env: Env, m: MemberRow) {
+  const { results } = await env.DB.prepare(
+    `SELECT e.slug, e.title, e.starts_at, s.checked_in_at, s.walk_in
+     FROM signups s JOIN events e ON e.id = s.event_id WHERE s.member_id = ? ORDER BY e.starts_at DESC LIMIT 30`)
+    .bind(m.id).all<{ slug: string; title: string; starts_at: string; checked_in_at: string | null; walk_in: number }>();
+  return {
+    ...cardView(m, env),
+    email: m.email, phone: m.phone, gender: m.gender, since: m.created_at,
+    card: { code: m.code, k: m.secret },
+    runs: results.map((r) => ({ slug: r.slug, title: r.title, starts_at: r.starts_at, checked_in: Boolean(r.checked_in_at), walk_in: Boolean(r.walk_in) })),
+  };
+}
+
+async function changePassword(request: Request, env: Env) {
+  const m = await requireMember(request, env);
+  await rateLimit(env, `account-password:${m.id}`, 5);
+  const b = await body(request);
+  if (!m.password_hash || !(await verifyPassword(String(b.current ?? ''), m.password_hash, env))) {
+    throw new HttpError(422, 'Tu contraseña actual no es correcta.', { current: 'Tu contraseña actual no es correcta.' });
+  }
+  const password = String(b.password ?? '');
+  const problem = passwordProblem(password);
+  if (problem) throw new HttpError(422, problem, { password: problem });
+  const updated = await env.DB.prepare('UPDATE members SET password_hash = ? WHERE id = ? RETURNING *')
+    .bind(await hashPassword(password), m.id).first<MemberRow>();
+  // Las sesiones abiertas en otros móviles caducan solas: la firma incluye la contraseña
+  return json(200, { token: await memberToken(env, updated!) });
+}
+
+// Mientras no haya correo, el club le da una contraseña nueva al socio que la olvide (o que no tenía cuenta)
+async function resetPassword(request: Request, env: Env) {
+  const who = String((await body(request)).who ?? '').trim();
+  const code = who.toUpperCase().replace(/^NRC-?/, 'NRC-');
+  const m = await env.DB.prepare('SELECT * FROM members WHERE code = ? OR email = ?').bind(code, who.toLowerCase()).first<MemberRow>();
+  if (!m) throw new HttpError(404, `No hay ningún socio con «${who || '(vacío)'}».`);
+  const bytes = crypto.getRandomValues(new Uint8Array(10));
+  const plain = [...bytes].map((b) => CODE_ALPHABET[b % CODE_ALPHABET.length]).join('').toLowerCase().replace(/(.{5})/, '$1-');
+  await env.DB.prepare('UPDATE members SET password_hash = ? WHERE id = ?').bind(await hashPassword(plain), m.id).run();
+  return json(200, { name: m.name, email: m.email, code: m.code, password: plain });
 }
 
 // ---------------------------------------------------------------------------
@@ -498,6 +598,64 @@ async function requireAdmin(request: Request, env: Env) {
   if (!exp || !sig || Number(exp) < Date.now() || !(await safeEqual(sig, await hmac(env, `admin.${exp}`), env))) {
     throw new HttpError(401, 'Tienes que entrar como administrador.');
   }
+}
+
+// ---------------------------------------------------------------------------
+// Contraseñas y sesión de socio
+// ---------------------------------------------------------------------------
+// PBKDF2 con sal: Workers permite como mucho 100 000 vueltas
+const PBKDF2_ITERATIONS = 100_000;
+const MEMBER_SESSION_DAYS = 180;
+
+function passwordProblem(p: string) {
+  if (p.length < 8) return 'La contraseña tiene que tener al menos 8 caracteres.';
+  if (p.length > 128) return 'La contraseña es demasiado larga.';
+  return null;
+}
+
+const toHex = (buf: ArrayBuffer | Uint8Array) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+const fromHex = (hex: string) => new Uint8Array((hex.match(/../g) ?? []).map((h) => parseInt(h, 16)));
+
+async function pbkdf2(password: string, salt: Uint8Array, iterations: number) {
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
+  return toHex(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations }, key, 256));
+}
+
+async function hashPassword(password: string) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  return `pbkdf2$${PBKDF2_ITERATIONS}$${toHex(salt)}$${await pbkdf2(password, salt, PBKDF2_ITERATIONS)}`;
+}
+
+async function verifyPassword(password: string, stored: string, env: Env) {
+  const [kind, iter, salt, hash] = stored.split('$');
+  if (kind !== 'pbkdf2' || !hash) return false;
+  return safeEqual(await pbkdf2(password, fromHex(salt), Number(iter)), hash, env);
+}
+
+// Token "id.caducidad.firma". La firma incluye un trozo del hash de la contraseña: al cambiarla,
+// las sesiones antiguas dejan de valer sin necesidad de guardarlas en ninguna tabla.
+async function memberToken(env: Env, m: MemberRow) {
+  const exp = Date.now() + MEMBER_SESSION_DAYS * 86400e3;
+  return `${m.id}.${exp}.${await hmac(env, `member.${m.id}.${exp}.${(m.password_hash ?? '').slice(-16)}`)}`;
+}
+
+async function memberFromAuth(request: Request, env: Env) {
+  const token = request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '');
+  if (!token) return null;
+  const [id, exp, sig] = token.split('.');
+  const m = id && exp && sig && Number(exp) > Date.now()
+    ? await env.DB.prepare('SELECT * FROM members WHERE id = ?').bind(Number(id)).first<MemberRow>()
+    : null;
+  if (!m?.password_hash || !(await safeEqual(sig, await hmac(env, `member.${m.id}.${exp}.${m.password_hash.slice(-16)}`), env))) {
+    throw new HttpError(401, 'Tu sesión ha caducado. Vuelve a entrar.');
+  }
+  return m;
+}
+
+async function requireMember(request: Request, env: Env) {
+  const m = await memberFromAuth(request, env);
+  if (!m) throw new HttpError(401, 'Tienes que entrar con tu cuenta.');
+  return m;
 }
 
 // ---------------------------------------------------------------------------

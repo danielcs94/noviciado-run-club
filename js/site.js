@@ -2,6 +2,7 @@
 import { API, esc, fmtDate } from "./config.js";
 import { GENDERS, INTENSITIES, LEVELS, PACES, distanceOptions, kmText } from "./club.js";
 import { createRouteMap, downloadGpx, googleMapsUrl } from "./routemap.js";
+import { currentAccount, forgetAccount, memberToken, saveSession, savedCard } from "./account.js";
 
 const $ = (sel) => document.querySelector(sel);
 let event = null;      // próximo evento (o null si no hay)
@@ -202,7 +203,8 @@ $("#levels").addEventListener("click", (e) => {
 const modal = $("#modal");
 const sheet = modal.querySelector(".sheet");
 const form = $("#form");
-const fields = { name: $("#name"), email: $("#email"), email2: $("#email2"), phone: $("#phone") };
+const fields = { name: $("#name"), email: $("#email"), email2: $("#email2"), phone: $("#phone"), password: $("#password") };
+let me = null; // la cuenta con la sesión abierta: se apunta con ella, sin repetir sus datos
 
 const chip = (name, value, label, hint, checked = false) =>
   `<label class="chip"><input type="radio" name="${name}" value="${value}" ${checked ? "checked" : ""}><span${hint ? "" : ' class="flat"'}><b>${label}</b>${hint ? `<small>${hint}</small>` : ""}</span></label>`;
@@ -223,14 +225,26 @@ function setStep(n) {
   if (n === 2) validateStep2();
 }
 
-function openModal() {
+async function openModal() {
   if (!event) return;
   sheet.classList.remove("success");
+  me = await currentAccount();
+  showIdentity();
   setStep(1);
   modal.classList.add("open");
   modal.setAttribute("aria-hidden", "false");
   document.body.style.overflow = "hidden";
-  setTimeout(() => fields.name.focus(), 250);
+  if (!me) setTimeout(() => fields.name.focus(), 250);
+}
+
+function showIdentity() {
+  $("#identity-fields").hidden = Boolean(me);
+  $("#as-member").hidden = !me;
+  if (me) {
+    $("#as-member").innerHTML = `<span class="eyebrow">Te apuntas como</span><b>${esc(me.name)}</b><small>${esc(me.email)} · <code>${esc(me.code)}</code></small><button class="link-back" type="button" id="not-me">¿No eres tú? Cerrar sesión</button>`;
+    $("#not-me").addEventListener("click", () => { saveSession(null); forgetAccount(); me = null; showIdentity(); validateStep1(); });
+  }
+  validateStep1();
 }
 function closeModal() {
   modal.classList.remove("open");
@@ -253,16 +267,18 @@ function checkField(input, ok) {
 }
 
 function validateStep1() {
+  if (me) { $("#next").disabled = false; return true; }
   const f = fields;
   const okName = checkField(f.name, f.name.value.trim().length >= 3);
   const okEmail = checkField(f.email, emailOk(f.email.value.trim()));
   const same = f.email2.value.trim().toLowerCase() === f.email.value.trim().toLowerCase();
   const okEmail2 = checkField(f.email2, okEmail && same);
   const okPhone = checkField(f.phone, phoneOk(f.phone.value));
+  const okPassword = checkField(f.password, f.password.value.length >= 8 && f.password.value.length <= 128);
   $("#email-hint").textContent = f.email2.dataset.touched === "1" && f.email2.value && !same
     ? "Los correos no coinciden."
     : "Con tu correo te reconocemos como socio, asegúrate de que está bien.";
-  const ok = okName && okEmail && okEmail2 && okPhone;
+  const ok = okName && okEmail && okEmail2 && okPhone && okPassword;
   $("#next").disabled = !ok;
   return ok;
 }
@@ -292,9 +308,14 @@ form.addEventListener("submit", async (e) => {
   if (!validateStep2()) return;
 
   const fd = new FormData(form);
+  // Socio de antes de las cuentas con su tarjeta en este móvil: al apuntarse se le activa la cuenta
+  const card = savedCard();
   const data = {
-    name: fd.get("name"), email: fd.get("email"), phone: fd.get("phone"),
-    gender: fd.get("gender") || null,
+    ...(me ? {} : {
+      name: fd.get("name"), email: fd.get("email"), phone: fd.get("phone"),
+      gender: fd.get("gender") || null, password: fd.get("password"),
+      ...(card?.k ? { card_k: card.k } : {}),
+    }),
     pace: fd.get("pace"),
     ...(votingOpen() ? { intensity: fd.get("intensity"), distance: fd.get("distance") } : {}),
     terms: true,
@@ -308,7 +329,7 @@ form.addEventListener("submit", async (e) => {
   try {
     res = await fetch(`${API}/events/${encodeURIComponent(event.slug)}/signups`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(me && memberToken() ? { Authorization: `Bearer ${memberToken()}` } : {}) },
       body: JSON.stringify(data),
     });
     body = await res.json();
@@ -316,14 +337,28 @@ form.addEventListener("submit", async (e) => {
     return failSubmit("No hemos podido conectar. Inténtalo de nuevo en un momento.");
   }
 
+  if (res.status === 401) {
+    // La sesión caducó: que rellene sus datos (o entre otra vez)
+    saveSession(null);
+    forgetAccount();
+    me = null;
+    showIdentity();
+    setStep(1);
+    return failSubmit(body.message);
+  }
   if (res.status === 422) {
     // Los errores de tus datos se arreglan en el paso 1
-    if (body.errors && ["name", "email", "phone", "gender"].some((k) => body.errors[k])) {
+    if (body.errors && ["name", "email", "phone", "gender", "password"].some((k) => body.errors[k])) {
       setStep(1);
       if (body.errors.email) {
         fields.email.dataset.touched = "1";
         fields.email.closest(".field").classList.replace("valid", "invalid");
         $("#email-hint").textContent = body.errors.email;
+      }
+      if (body.errors.password) {
+        fields.password.dataset.touched = "1";
+        fields.password.closest(".field").classList.replace("valid", "invalid");
+        $("#password-hint").textContent = `${body.errors.password} Si la has olvidado, pídenos una nueva en el club.`;
       }
     }
     return failSubmit(body.message);
@@ -342,6 +377,7 @@ form.addEventListener("submit", async (e) => {
 
   form.reset();
   Object.values(fields).forEach((i) => { delete i.dataset.touched; i.closest(".field").className = "field"; });
+  $("#password-hint").textContent = "Mínimo 8 caracteres. Con tu correo y esta contraseña entras en tu cuenta, en el icono de arriba a la derecha. Si ya tienes cuenta, pon tu contraseña.";
   submit.textContent = "Reservar mi plaza";
 });
 
@@ -365,20 +401,22 @@ function showSuccess(b) {
   // Mientras no haya correo (falta el dominio), todo lo que necesita lo ve aquí
   const intro = `Te esperamos en el club el ${when}. Al llegar, di tu nombre y listo.`;
 
-  const cardLink = $("#done-card");
+  const accountBtn = $("#done-account");
   const wallet = $("#done-wallet");
-  if (b.card) {
-    try { localStorage.setItem("nrc:card", JSON.stringify(b.card)); } catch {}
+  if (b.token) {
+    saveSession(b.token, b.card);
+    forgetAccount();
     showMyCardLink();
-    cardLink.href = `tarjeta.html?c=${encodeURIComponent(b.card.code)}&k=${encodeURIComponent(b.card.k)}`;
-    cardLink.hidden = false;
-    $("#done-text").textContent = `${intro} Esta es tu tarjeta de socio: la tienes siempre arriba a la derecha de la web, en «Mi tarjeta». Enséñala al llegar para sumar puntos.`;
+    accountBtn.hidden = false;
+    $("#done-text").textContent = b.newMember
+      ? `${intro} Ya tienes tu cuenta de socio: en el icono de arriba a la derecha ves tu tarjeta con el QR y tus puntos. Enséñala al llegar para sumar puntos.`
+      : `${intro} Tu tarjeta con el QR y tus puntos están en tu cuenta, en el icono de arriba a la derecha. Enséñala al llegar para sumar puntos.`;
     wallet.hidden = !b.wallet;
     wallet.onclick = () => addToGoogleWallet(b.card, wallet);
   } else {
-    cardLink.hidden = true;
+    accountBtn.hidden = true;
     wallet.hidden = true;
-    $("#done-text").textContent = `${intro} Ya eras socio: si guardaste tu tarjeta en este móvil, la tienes arriba a la derecha, en «Mi tarjeta». Enséñala al llegar para sumar puntos.`;
+    $("#done-text").textContent = `${intro} Tu correo ya era socio de antes de que hubiera cuentas: pídenos en el club que te la activemos y te damos tu contraseña.`;
   }
   sheet.classList.add("success");
   sheet.scrollTop = 0;
@@ -397,6 +435,12 @@ export async function addToGoogleWallet(card, button) {
     button.disabled = false;
   }
 }
+
+$("#done-account").addEventListener("click", () => {
+  closeModal();
+  document.querySelector("#account-btn")?.click();
+});
+document.addEventListener("nrc:session", showMyCardLink);
 
 // "Mi tarjeta" en la cabecera si este móvil ya tiene una guardada
 function showMyCardLink() {

@@ -13,8 +13,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;0,6..96,700;1,6..96,400&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.css" integrity="sha384-MinO0mNliZ3vwppuPOUnGa+iq619pfMhLVUXfC4LHwSCvF9H+6P/KO4Q7qBOYV5V" crossorigin="anonymous">
-<link rel="stylesheet" href="css/site.css?v=202611042249">
-<link rel="stylesheet" href="css/admin.css?v=202611042249">
+<link rel="stylesheet" href="css/site.css?v=202611051727">
+<link rel="stylesheet" href="css/admin.css?v=202611051727">
 </head>
 <body>
 
@@ -214,6 +214,8 @@
 
     <form id="form" novalidate>
       <div class="step" id="step-1">
+        <div class="as-member" id="as-member" hidden></div>
+        <div class="step" id="identity-fields">
         <div class="field">
           <input id="name" name="name" type="text" autocomplete="name" placeholder=" " required minlength="3" maxlength="80">
           <label for="name">Nombre y apellido</label>
@@ -231,9 +233,15 @@
           <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder=" " required>
           <label for="phone">Teléfono</label>
         </div>
+        <div class="field">
+          <input id="password" name="password" type="password" autocomplete="new-password" placeholder=" " required minlength="8" maxlength="128">
+          <label for="password">Contraseña de tu cuenta</label>
+        </div>
+        <p class="hint" id="password-hint">Mínimo 8 caracteres. Con tu correo y esta contraseña entras en tu cuenta, en el icono de arriba a la derecha. Si ya tienes cuenta, pon tu contraseña.</p>
 
         <span class="eyebrow group-label">Sexo <span class="optional">· opcional</span></span>
         <div class="chips four" id="gender-chips" role="radiogroup"></div>
+        </div>
 
         <button class="btn-gold btn-block" type="button" id="next" disabled>Siguiente</button>
       </div>
@@ -275,7 +283,7 @@
       <h3>¡Ya estás inscrito!</h3>
       <p id="done-text"></p>
       <div class="actions">
-        <a class="btn-gold btn-block" id="done-card" href="#" hidden>Guardar mi tarjeta</a>
+        <button class="btn-gold btn-block" type="button" id="done-account" hidden>Ver mi cuenta y mi QR</button>
         <button class="btn-line" type="button" id="done-wallet" hidden>Añadir a Google Wallet</button>
         <button class="btn-line" type="button" data-close>Hecho</button>
       </div>
@@ -287,24 +295,26 @@
 <script type="importmap">
 {
   "imports": {
-    "./js/admin-checkin.js": "./js/admin-checkin.js?v=202611042249",
-    "./js/admin-route.js": "./js/admin-route.js?v=202611042249",
-    "./js/admin.js": "./js/admin.js?v=202611042249",
-    "./js/card.js": "./js/card.js?v=202611042249",
-    "./js/club.js": "./js/club.js?v=202611042249",
-    "./js/config.js": "./js/config.js?v=202611042249",
-    "./js/routemap.js": "./js/routemap.js?v=202611042249",
-    "./js/rutas/api.js": "./js/rutas/api.js?v=202611042249",
-    "./js/rutas/config.js": "./js/rutas/config.js?v=202611042249",
-    "./js/rutas/datasets.js": "./js/rutas/datasets.js?v=202611042249",
-    "./js/rutas/geo.js": "./js/rutas/geo.js?v=202611042249",
-    "./js/rutas/mapstyle.js": "./js/rutas/mapstyle.js?v=202611042249",
-    "./js/rutas/planner.js": "./js/rutas/planner.js?v=202611042249",
-    "./js/site.js": "./js/site.js?v=202611042249"
+    "./js/account.js": "./js/account.js?v=202611051727",
+    "./js/admin-checkin.js": "./js/admin-checkin.js?v=202611051727",
+    "./js/admin-route.js": "./js/admin-route.js?v=202611051727",
+    "./js/admin.js": "./js/admin.js?v=202611051727",
+    "./js/card.js": "./js/card.js?v=202611051727",
+    "./js/club.js": "./js/club.js?v=202611051727",
+    "./js/config.js": "./js/config.js?v=202611051727",
+    "./js/routemap.js": "./js/routemap.js?v=202611051727",
+    "./js/rutas/api.js": "./js/rutas/api.js?v=202611051727",
+    "./js/rutas/config.js": "./js/rutas/config.js?v=202611051727",
+    "./js/rutas/datasets.js": "./js/rutas/datasets.js?v=202611051727",
+    "./js/rutas/geo.js": "./js/rutas/geo.js?v=202611051727",
+    "./js/rutas/mapstyle.js": "./js/rutas/mapstyle.js?v=202611051727",
+    "./js/rutas/planner.js": "./js/rutas/planner.js?v=202611051727",
+    "./js/site.js": "./js/site.js?v=202611051727"
   }
 }
 </script>
-<script type="module" src="js/site.js?v=202611042249"></script>
-<script type="module" src="js/admin.js?v=202611042249"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js" integrity="sha384-mZT2gIty7ZDdOGkxfP6joZcYdMW1Jvj9dRlfpTmaJAKKXTqzygtB22k7FLe+KZC1" crossorigin="anonymous"></script>
+<script type="module" src="js/site.js?v=202611051727"></script>
+<script type="module" src="js/admin.js?v=202611051727"></script>
 </body>
 </html>
