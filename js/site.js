@@ -1,6 +1,7 @@
 // Web pública: próximo evento, ruta publicada y formulario de inscripción en dos pasos.
-import { API, esc, fmtDate } from "./config.js";
+import { API, esc } from "./config.js";
 import { GENDERS, INTENSITIES, LEVELS, PACES, distanceOptions, kmText } from "./club.js";
+import { applyStatic, fmtDate, mountLangSwitch, t, tServer } from "./i18n.js";
 import { createRouteMap, downloadGpx, googleMapsUrl } from "./routemap.js";
 import { currentAccount, forgetAccount, memberToken, saveSession, savedCard } from "./account.js";
 
@@ -16,7 +17,7 @@ async function loadEvent() {
     if (!res.ok) throw new Error(res.status);
     event = await res.json();
   } catch {
-    $("#left").textContent = "No se pudo cargar el evento";
+    $("#left").textContent = t("ev.error");
     return;
   }
   renderEvent();
@@ -28,8 +29,8 @@ async function loadEvent() {
 
 function renderNoEvent() {
   event = null;
-  $("#status-pill").textContent = "Próximamente";
-  $("#left").textContent = "Anunciaremos la próxima fecha muy pronto.";
+  $("#status-pill").textContent = t("status.soon");
+  $("#left").textContent = t("ev.none");
   document.querySelectorAll("[data-open]").forEach((b) => (b.disabled = true));
 }
 
@@ -51,8 +52,8 @@ function renderCounter() {
   const e = event;
   $("#cap").textContent = e.capacity;
   $("#bar").style.width = Math.min(100, (e.booked / e.capacity) * 100) + "%";
-  $("#left").textContent = e.left > 0 ? `Quedan ${e.left} plazas` : "Aforo completo";
-  $("#status-pill").textContent = e.left > 0 ? "Plazas abiertas" : "Aforo completo";
+  $("#left").textContent = e.left > 0 ? t("ev.left", { n: e.left }) : t("ev.full");
+  $("#status-pill").textContent = e.left > 0 ? t("status.open") : t("status.full");
   document.querySelectorAll("[data-open]").forEach((b) => (b.disabled = e.left <= 0));
   animateNumber($("#count"), e.booked);
 }
@@ -77,18 +78,14 @@ function renderVoting() {
   $("#vote-fields").hidden = !open;
   const closed = $("#vote-closed");
   closed.hidden = open;
-  closed.textContent = event.routes?.length
-    ? "La ruta ya está publicada: la tienes en la ficha de la carrera. Solo dinos tu ritmo."
-    : "La votación de la ruta ya está cerrada. Te apuntas igual y publicamos el recorrido antes de la salida.";
+  closed.textContent = event.routes?.length ? t("vote.closedRoute") : t("vote.closed");
   if (!event.routes?.length) {
-    $("#route-empty-text").innerHTML = open
-      ? `<b style="color:var(--text);font-weight:500">La ruta la decidimos entre todos.</b> Cuando te apuntas, votas cuánto quieres correr y cómo de dura la quieres. Se puede votar hasta el ${esc(closeText())}; después publicamos aquí el recorrido, con el mapa, el desnivel y el enlace para llevarlo en el móvil.`
-      : `<b style="color:var(--text);font-weight:500">Votación cerrada.</b> Estamos trazando la ruta con lo que habéis votado y la publicaremos aquí antes de la salida. Aún puedes apuntarte.`;
-    $("#route-empty-btn").textContent = open ? "Apúntate y vota" : "Apúntate";
+    $("#route-empty-text").innerHTML = open ? t("vote.openText", { close: esc(closeText()) }) : t("vote.closedText");
+    $("#route-empty-btn").textContent = open ? t("route.joinVote") : t("route.join");
   }
 }
 
-const closeText = () => `${fmtDate(event.votes_close_at, { weekday: "long", day: "numeric" })} a las ${fmtDate(event.votes_close_at, { hour: "2-digit", minute: "2-digit" })}`;
+const closeText = () => t("time.at", { day: fmtDate(event.votes_close_at, { weekday: "long", day: "numeric" }), time: fmtDate(event.votes_close_at, { hour: "2-digit", minute: "2-digit" }) });
 
 let countdownTimer = null;
 function startCountdown() {
@@ -108,11 +105,11 @@ function tick() {
   const target = open ? new Date(event.votes_close_at).getTime() : start;
   box.hidden = false;
   box.classList.toggle("closed", !open && !event.routes?.length);
-  $("#countdown-label").textContent = open ? "Votación de la ruta · cierra en" : "Salida en";
+  $("#countdown-label").textContent = open ? t("cd.voting") : t("cd.start");
   $("#countdown-value").innerHTML = span(target - now);
   $("#countdown-note").textContent = open
-    ? `Hasta el ${closeText()}. Después solo inscripción.`
-    : event.routes?.length ? "La ruta ya está publicada: mírala más abajo" : "Votación cerrada · publicamos la ruta antes de la salida";
+    ? t("cd.untilClose", { close: closeText() })
+    : event.routes?.length ? t("cd.published") : t("cd.closed");
 }
 
 // 2 d 14 h 05 min; el último día, con segundos
@@ -128,12 +125,12 @@ function span(ms) {
 function renderRoute() {
   const routes = event.routes;
   if (!routes?.length) return; // se queda el texto de "la decidimos entre todos"
-  $("#route-title").textContent = routes.length > 1 ? "Dos recorridos" : routes[0].name;
+  $("#route-title").textContent = routes.length > 1 ? t("route.two") : routes[0].name;
 
   const tabs = $("#route-tabs");
   tabs.hidden = routes.length < 2;
   tabs.innerHTML = routes.map((r, i) =>
-    `<button type="button" role="tab" aria-selected="${i === 0}" data-i="${i}">${esc(r.label)} · ${kmText(r.km)} km</button>`).join("");
+    `<button type="button" role="tab" aria-selected="${i === 0}" data-i="${i}">${esc(t(`route.label.${r.label}`))} · ${kmText(r.km)} km</button>`).join("");
 
   $("#route-body").innerHTML = `
     <div class="route-map" id="route-map"></div>
@@ -141,8 +138,8 @@ function renderRoute() {
     <div class="route-foot">
       <p id="route-desc"></p>
       <div class="actions">
-        <a class="btn-gold" id="route-gmaps" target="_blank" rel="noopener">Abrir en Google Maps</a>
-        <button class="btn-line" type="button" id="route-gpx">Descargar GPX</button>
+        <a class="btn-gold" id="route-gmaps" target="_blank" rel="noopener">${t("route.gmaps")}</a>
+        <button class="btn-line" type="button" id="route-gpx">${t("route.gpx")}</button>
       </div>
     </div>`;
 
@@ -150,7 +147,7 @@ function renderRoute() {
     routeMap = createRouteMap($("#route-map"));
     routeMap.show(routes, 0);
   } catch {
-    $("#route-map").innerHTML = '<p class="note" style="padding:40px 20px">No se pudo cargar el mapa.</p>';
+    $("#route-map").innerHTML = `<p class="note" style="padding:40px 20px">${t("route.mapError")}</p>`;
   }
   showRouteInfo(0);
 
@@ -170,12 +167,12 @@ function showRouteInfo(i) {
   const time = r.minutes ? `${Math.round(r.minutes[0])}–${Math.round(r.minutes[1])}′` : "—";
   $("#route-stats").innerHTML = `
     <div><b>${kmText(r.km, 2)}</b><span>km</span></div>
-    <div><b>${r.gain != null ? `+${Math.round(r.gain)}` : "—"}</b><span>m desnivel</span></div>
-    <div><b>${park != null ? `${park}%` : "—"}</b><span>parque o tierra</span></div>
-    <div><b>${time}</b><span>${r.pace ? `ritmo ${esc(PACES[r.pace]?.label.toLowerCase() ?? "")}` : "minutos"}</span></div>`;
-  const by = r.landmarks?.length ? `Pasa por ${r.landmarks.slice(0, 5).join(", ")}.` : "";
-  const intensity = INTENSITIES[r.intensity] ? `Intensidad ${INTENSITIES[r.intensity].label.toLowerCase()}.` : "";
-  const two = event.routes.length > 1 ? (i === 0 ? " Para los grupos tranquilo y medio." : " Para el grupo rápido: así llegamos todos a la vez.") : "";
+    <div><b>${r.gain != null ? `+${Math.round(r.gain)}` : "—"}</b><span>${t("route.gain")}</span></div>
+    <div><b>${park != null ? `${park}%` : "—"}</b><span>${t("route.park")}</span></div>
+    <div><b>${time}</b><span>${r.pace ? esc(t("route.pace", { pace: t(`pace.${r.pace}`).toLowerCase() })) : t("route.minutes")}</span></div>`;
+  const by = r.landmarks?.length ? t("route.passes", { places: r.landmarks.slice(0, 5).join(", ") }) : "";
+  const intensity = INTENSITIES[r.intensity] ? t("route.intensity", { level: t(`intensity.${r.intensity}`).toLowerCase() }) : "";
+  const two = event.routes.length > 1 ? ` ${i === 0 ? t("route.forSlow") : t("route.forFast")}` : "";
   $("#route-desc").textContent = `${by || `${r.name}.`} ${intensity}${two}`.replace(/\s+/g, " ").trim();
   $("#route-gmaps").href = googleMapsUrl(r);
   $("#route-gpx").onclick = () => downloadGpx(r, `${event.title} · ${r.label}`);
@@ -184,7 +181,7 @@ function showRouteInfo(i) {
 // ---------- Tarjeta de socio (sección informativa) ----------
 // Al pulsar un nivel, la tarjeta de ejemplo cambia a su color
 $("#levels").innerHTML = LEVELS.map((l, i) =>
-  `<li><button type="button" data-level="${l.key}" aria-pressed="${i === 0}"><b>${l.name}</b><span>${l.from ? `desde ${l.from} puntos · ${l.from / 10} carreras` : "al apuntarte"}</span></button></li>`).join("");
+  `<li><button type="button" data-level="${l.key}" aria-pressed="${i === 0}"><b>${l.name}</b><span>${l.from ? t("card.levelFrom", { n: l.from, runs: l.from / 10 }) : t("card.levelStart")}</span></button></li>`).join("");
 $("#levels").addEventListener("click", (e) => {
   const b = e.target.closest("button[data-level]");
   if (!b) return;
@@ -193,7 +190,7 @@ $("#levels").addEventListener("click", (e) => {
   if (pass.dataset.level === level.key) return;
   $("#levels").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
   pass.dataset.level = level.key;
-  $("#preview-level").textContent = `${level.name} · ${level.from} puntos`;
+  $("#preview-level").textContent = `${level.name} · ${t("points", { n: level.from })}`;
   pass.classList.remove("flip");
   void pass.offsetWidth; // reinicia la animación
   pass.classList.add("flip");
@@ -210,17 +207,18 @@ const chip = (name, value, label, hint, checked = false) =>
   `<label class="chip"><input type="radio" name="${name}" value="${value}" ${checked ? "checked" : ""}><span${hint ? "" : ' class="flat"'}><b>${label}</b>${hint ? `<small>${hint}</small>` : ""}</span></label>`;
 
 function buildQuiz() {
-  $("#gender-chips").innerHTML = Object.entries(GENDERS).map(([k, v]) => chip("gender", k, v)).join("") + chip("gender", "", "Prefiero no decirlo");
-  $("#pace-chips").innerHTML = Object.entries(PACES).map(([k, p]) => chip("pace", k, p.label, p.hint)).join("");
-  $("#intensity-chips").innerHTML = Object.entries(INTENSITIES).map(([k, p]) => chip("intensity", k, p.label, p.hint)).join("");
-  $("#distance-chips").innerHTML = Object.entries(distanceOptions(event.max_km)).map(([k, d]) => chip("distance", k, d.label, d.hint)).join("");
+  $("#gender-chips").innerHTML = Object.keys(GENDERS).map((k) => chip("gender", k, t(`gender.${k}`))).join("") + chip("gender", "", t("gender.none"));
+  $("#pace-chips").innerHTML = Object.entries(PACES).map(([k, p]) => chip("pace", k, t(`pace.${k}`), p.hint)).join("");
+  $("#intensity-chips").innerHTML = Object.keys(INTENSITIES).map((k) => chip("intensity", k, t(`intensity.${k}`), t(`intensity.${k}.hint`))).join("");
+  $("#distance-chips").innerHTML = Object.entries(distanceOptions(event.max_km)).map(([k, d]) =>
+    k === "igual" ? chip("distance", k, t("distance.igual"), t("distance.igual.hint")) : chip("distance", k, d.label, t(`distance.${k}`))).join("");
 }
 
 function setStep(n) {
   $("#step-1").hidden = n !== 1;
   $("#step-2").hidden = n !== 2;
   $("#stepper-2").classList.toggle("on", n === 2);
-  $("#sheet-step").textContent = n === 1 ? "Paso 1 de 2 · Tus datos" : votingOpen() ? "Paso 2 de 2 · Tu ruta" : "Paso 2 de 2 · Tu ritmo";
+  $("#sheet-step").textContent = n === 1 ? t("f.step1") : votingOpen() ? t("f.step2route") : t("f.step2pace");
   sheet.scrollTop = 0;
   if (n === 2) validateStep2();
 }
@@ -241,7 +239,7 @@ function showIdentity() {
   $("#identity-fields").hidden = Boolean(me);
   $("#as-member").hidden = !me;
   if (me) {
-    $("#as-member").innerHTML = `<span class="eyebrow">Te apuntas como</span><b>${esc(me.name)}</b><small>${esc(me.email)} · <code>${esc(me.code)}</code></small><button class="link-back" type="button" id="not-me">¿No eres tú? Cerrar sesión</button>`;
+    $("#as-member").innerHTML = `<span class="eyebrow">${t("f.signingAs")}</span><b>${esc(me.name)}</b><small>${esc(me.email)} · <code>${esc(me.code)}</code></small><button class="link-back" type="button" id="not-me">${t("f.notMe")}</button>`;
     $("#not-me").addEventListener("click", () => { saveSession(null); forgetAccount(); me = null; showIdentity(); validateStep1(); });
   }
   validateStep1();
@@ -276,8 +274,8 @@ function validateStep1() {
   const okPhone = checkField(f.phone, phoneOk(f.phone.value));
   const okPassword = checkField(f.password, f.password.value.length >= 8 && f.password.value.length <= 128);
   $("#email-hint").textContent = f.email2.dataset.touched === "1" && f.email2.value && !same
-    ? "Los correos no coinciden."
-    : "Con tu correo te reconocemos como socio, asegúrate de que está bien.";
+    ? t("f.emailMismatch")
+    : t("f.emailHint");
   const ok = okName && okEmail && okEmail2 && okPhone && okPassword;
   $("#next").disabled = !ok;
   return ok;
@@ -322,7 +320,7 @@ form.addEventListener("submit", async (e) => {
   };
   const submit = $("#submit");
   submit.disabled = true;
-  submit.textContent = "Reservando…";
+  submit.textContent = t("f.submitting");
   showError("");
 
   let res, body;
@@ -334,7 +332,7 @@ form.addEventListener("submit", async (e) => {
     });
     body = await res.json();
   } catch {
-    return failSubmit("No hemos podido conectar. Inténtalo de nuevo en un momento.");
+    return failSubmit(t("f.noConnection"));
   }
 
   if (res.status === 401) {
@@ -344,7 +342,7 @@ form.addEventListener("submit", async (e) => {
     me = null;
     showIdentity();
     setStep(1);
-    return failSubmit(body.message);
+    return failSubmit(tServer(body.message));
   }
   if (res.status === 422) {
     // Los errores de tus datos se arreglan en el paso 1
@@ -353,22 +351,22 @@ form.addEventListener("submit", async (e) => {
       if (body.errors.email) {
         fields.email.dataset.touched = "1";
         fields.email.closest(".field").classList.replace("valid", "invalid");
-        $("#email-hint").textContent = body.errors.email;
+        $("#email-hint").textContent = tServer(body.errors.email);
       }
       if (body.errors.password) {
         fields.password.dataset.touched = "1";
         fields.password.closest(".field").classList.replace("valid", "invalid");
-        $("#password-hint").textContent = `${body.errors.password} Si la has olvidado, pídenos una nueva en el club.`;
+        $("#password-hint").textContent = `${tServer(body.errors.password)} ${t("f.passwordForgot")}`;
       }
     }
-    return failSubmit(body.message);
+    return failSubmit(tServer(body.message));
   }
   if (res.status === 409) {
     event.left = 0;
     renderCounter();
-    return failSubmit(body.message === "Aforo completo." ? "Lo sentimos, el aforo se acaba de completar." : body.message);
+    return failSubmit(body.message === "Aforo completo." ? t("f.fullNow") : tServer(body.message));
   }
-  if (!res.ok) return failSubmit(body.message ?? "Algo ha fallado. Inténtalo de nuevo.");
+  if (!res.ok) return failSubmit(body.message ? tServer(body.message) : t("f.error"));
 
   event.booked = body.booked;
   event.left = Math.max(0, body.capacity - body.booked);
@@ -377,8 +375,8 @@ form.addEventListener("submit", async (e) => {
 
   form.reset();
   Object.values(fields).forEach((i) => { delete i.dataset.touched; i.closest(".field").className = "field"; });
-  $("#password-hint").textContent = "Mínimo 8 caracteres. Con tu correo y esta contraseña entras en tu cuenta, en el icono de arriba a la derecha. Si ya tienes cuenta, pon tu contraseña.";
-  submit.textContent = "Reservar mi plaza";
+  $("#password-hint").textContent = t("f.passwordHint");
+  submit.textContent = t("f.submit");
 });
 
 function showError(msg) {
@@ -388,7 +386,7 @@ function showError(msg) {
 }
 function failSubmit(msg) {
   showError(msg);
-  $("#submit").textContent = "Reservar mi plaza";
+  $("#submit").textContent = t("f.submit");
   validateStep2();
 }
 
@@ -396,10 +394,10 @@ function showSuccess(b) {
   $("#pass-name").textContent = b.name;
   $("#pass-code").textContent = b.code;
   $("#pass-event").textContent = event.title;
-  $("#pass-level").textContent = `${b.level} · ${b.points} puntos`;
+  $("#pass-level").textContent = `${b.level} · ${t("points", { n: b.points })}`;
   const when = `${fmtDate(event.starts_at, { weekday: "long", day: "numeric" })}, ${fmtDate(event.starts_at, { hour: "2-digit", minute: "2-digit" })}`;
   // Mientras no haya correo (falta el dominio), todo lo que necesita lo ve aquí
-  const intro = `Te esperamos en el club el ${when}. Al llegar, di tu nombre y listo.`;
+  const intro = t("done.intro", { when });
 
   const accountBtn = $("#done-account");
   const wallet = $("#done-wallet");
@@ -408,15 +406,13 @@ function showSuccess(b) {
     forgetAccount();
     showMyCardLink();
     accountBtn.hidden = false;
-    $("#done-text").textContent = b.newMember
-      ? `${intro} Ya tienes tu cuenta de socio: en el icono de arriba a la derecha ves tu tarjeta con el QR y tus puntos. Enséñala al llegar para sumar puntos.`
-      : `${intro} Tu tarjeta con el QR y tus puntos están en tu cuenta, en el icono de arriba a la derecha. Enséñala al llegar para sumar puntos.`;
+    $("#done-text").textContent = `${intro} ${b.newMember ? t("done.new") : t("done.member")}`;
     wallet.hidden = !b.wallet;
     wallet.onclick = () => addToGoogleWallet(b.card, wallet);
   } else {
     accountBtn.hidden = true;
     wallet.hidden = true;
-    $("#done-text").textContent = `${intro} Tu correo ya era socio de antes de que hubiera cuentas: pídenos en el club que te la activemos y te damos tu contraseña.`;
+    $("#done-text").textContent = `${intro} ${t("done.pending")}`;
   }
   sheet.classList.add("success");
   sheet.scrollTop = 0;
@@ -430,7 +426,7 @@ export async function addToGoogleWallet(card, button) {
     if (!res.ok) throw new Error(body.message);
     location.href = body.url;
   } catch (e) {
-    button.textContent = e.message || "No se pudo abrir Google Wallet";
+    button.textContent = t("done.walletError");
   } finally {
     button.disabled = false;
   }
@@ -451,5 +447,7 @@ function showMyCardLink() {
   if (saved?.code) link.href = `tarjeta.html?c=${encodeURIComponent(saved.code)}&k=${encodeURIComponent(saved.k)}`;
 }
 
+applyStatic();
+mountLangSwitch($("#lang"));
 showMyCardLink();
 loadEvent();

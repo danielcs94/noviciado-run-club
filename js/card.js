@@ -3,6 +3,7 @@
 /* global qrcode */
 import { API, esc } from "./config.js";
 import { CHECKIN_POINTS } from "./club.js";
+import { applyStatic, t } from "./i18n.js";
 
 const CARD_KEY = "nrc:card";
 const root = document.querySelector("#card-root");
@@ -14,15 +15,15 @@ if (!card.code || !card.k) {
 }
 
 async function load() {
-  if (!card.code || !card.k) return fail("No encontramos tu tarjeta", "Abre el enlace que te dimos al apuntarte o el del correo del club.");
+  if (!card.code || !card.k) return fail(t("cardpage.notFoundT"), t("cardpage.notFound"));
   let m;
   try {
     const res = await fetch(`${API}/card/${encodeURIComponent(card.code)}?k=${encodeURIComponent(card.k)}`);
-    if (res.status === 404) return fail("Esta tarjeta no existe", "Revisa que el enlace esté completo.");
+    if (res.status === 404) return fail(t("cardpage.badT"), t("cardpage.bad"));
     if (!res.ok) throw new Error();
     m = await res.json();
   } catch {
-    return fail("Sin conexión", "No hemos podido cargar tu tarjeta. Inténtalo de nuevo en un momento.");
+    return fail(t("cardpage.offlineT"), t("cardpage.offline"));
   }
   try { localStorage.setItem(CARD_KEY, JSON.stringify(card)); } catch {}
   // La dirección siempre con el código, para que "Añadir a pantalla de inicio" guarde la tarjeta buena
@@ -41,19 +42,17 @@ function render(m) {
         <div><span class="eyebrow">Noviciado Run Club</span><h1 class="gold-text">${esc(m.name)}</h1></div>
         <span class="pass-level">${esc(m.level)}</span>
       </div>
-      <div class="qr" id="qr" role="img" aria-label="Código QR de ${esc(m.code)}"></div>
+      <div class="qr" id="qr" role="img" aria-label="${esc(t("acc.qrLabel", { code: m.code }))}"></div>
       <code>${esc(m.code)}</code>
       <div class="progress">
-        <header><span><b>${m.points}</b> puntos</span><span>${m.next ? `${toNext} para ${esc(m.next.name)} · ${Math.ceil(toNext / CHECKIN_POINTS)} carreras` : "Nivel máximo"}</span></header>
+        <header><span><b>${m.points}</b> ${t("acc.points")}</span><span>${m.next ? esc(t("acc.toNext", { n: toNext, level: m.next.name, runs: Math.ceil(toNext / CHECKIN_POINTS) })) : t("acc.max")}</span></header>
         <div class="bar"><i style="width:${pct}%"></i></div>
       </div>
     </div>
     <div class="card-actions">
-      ${m.wallet && !ios ? '<button class="btn-gold btn-block" type="button" id="wallet">Añadir a Google Wallet</button>' : ""}
+      ${m.wallet && !ios ? `<button class="btn-gold btn-block" type="button" id="wallet">${t("done.wallet")}</button>` : ""}
     </div>
-    ${standalone ? "" : `<p class="howto">${ios
-      ? "<b>Guárdala en el iPhone:</b> pulsa Compartir en Safari y luego <b>Añadir a pantalla de inicio</b>. Se abrirá como una app y la tendrás a mano al llegar."
-      : "<b>Enséñala al llegar</b> a cada quedada: escaneamos el código y sumas 10 puntos. Guarda esta página en favoritos o en la pantalla de inicio."}</p>`}`;
+    ${standalone ? "" : `<p class="howto">${ios ? t("cardpage.iosTip") : t("cardpage.tip")}</p>`}`;
   const qr = qrcode(0, "M");
   qr.addData(m.code);
   qr.make();
@@ -70,13 +69,15 @@ async function addToWallet(e) {
     if (!res.ok) throw new Error(body.message);
     location.href = body.url;
   } catch (err) {
-    btn.textContent = err.message || "No se pudo abrir Google Wallet";
+    btn.textContent = t("done.walletError");
     btn.disabled = false;
   }
 }
 
 function fail(title, text) {
-  root.innerHTML = `<div class="card-error"><h1>${esc(title)}</h1><p>${esc(text)}</p><a class="btn-line" href="./">Ir a la web del club</a></div>`;
+  root.innerHTML = `<div class="card-error"><h1>${esc(title)}</h1><p>${esc(text)}</p><a class="btn-line" href="./">${t("cardpage.goSite")}</a></div>`;
 }
 
+document.title = t("cardpage.title");
+applyStatic();
 load();

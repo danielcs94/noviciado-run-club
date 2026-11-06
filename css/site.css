@@ -591,3 +591,47 @@ a.btn-gold { text-decoration: none; display: inline-flex; align-items: center; j
   .topbar .brand { justify-self: start; }
   .topbar > :last-child { justify-self: end; }
 }
+
+/* ---------- Selector de idioma (cabecera) ---------- */
+.lang { position: relative; }
+.lang-btn {
+  appearance: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 10px; border: 0; border-radius: 999px; background: transparent;
+  font: inherit; font-size: 12px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; color: var(--gold);
+}
+.lang-btn:hover, .lang-btn[aria-expanded="true"] { color: var(--gold-hi); background: rgba(217,181,106,.06); }
+.lang-btn svg { opacity: .8; transition: transform .2s; }
+.lang-btn[aria-expanded="true"] svg { transform: rotate(180deg); }
+.lang-code { display: none; }
+.lang-list {
+  position: absolute; top: calc(100% + 8px); inset-inline-end: 0; z-index: 40; min-width: 220px;
+  list-style: none; margin: 0; padding: 6px; border-radius: 18px;
+  background: rgba(14,14,16,.97); border: 1px solid var(--line-strong);
+  box-shadow: 0 24px 60px rgba(0,0,0,.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+}
+.lang-list[hidden] { display: none; }
+.lang-list li {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer;
+  padding: 12px 16px; border-radius: 12px;
+  font-size: 13px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; color: var(--muted);
+}
+.lang-list li:hover { color: var(--text); background: rgba(255,255,255,.04); }
+.lang-list li[aria-selected="true"] { color: var(--gold-hi); background: rgba(217,181,106,.1); }
+.lang-list li[lang="ar"] { letter-spacing: 0; font-size: 15px; }
+/* En el móvil la cabecera va justa: solo el código (ES, EN…) */
+@media (max-width: 899px) {
+  .lang-name { display: none; }
+  .lang-code { display: inline; }
+  .lang-btn { padding: 8px 6px; letter-spacing: .12em; }
+}
+@media (max-width: 520px) {
+  .topbar { padding-inline: 14px; }
+  .topbar-right { gap: 6px; }
+}
+
+/* ---------- Árabe: de derecha a izquierda ---------- */
+[dir="rtl"] .ticker div { animation-direction: reverse; }
+[dir="rtl"] .eyebrow, [dir="rtl"] .nav a, [dir="rtl"] .pill, [dir="rtl"] .btn-gold, [dir="rtl"] .btn-line,
+[dir="rtl"] .lang-btn, [dir="rtl"] .my-card, [dir="rtl"] .pass-level { letter-spacing: 0; }
+[dir="rtl"] .account-data dd { text-align: left; }
+.pill { white-space: nowrap; }

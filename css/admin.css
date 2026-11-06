@@ -16,7 +16,8 @@ body.is-admin main.wrap,
 body.is-admin .dock,
 body.is-admin .topbar .nav,
 body.is-admin .topbar .my-card,
-body.is-admin .topbar .pill { display: none; }
+body.is-admin .topbar .pill,
+body.is-admin .topbar .lang { display: none; }
 #admin { display: none; }
 body.is-admin #admin { display: block; }
 

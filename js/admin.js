@@ -67,7 +67,7 @@ function mount() {
   const right = document.createElement("div");
   right.className = "topbar-right";
   pill.replaceWith(right);
-  right.append(pill, $("#my-card"));
+  right.append(...[$("#lang"), pill, $("#my-card")].filter(Boolean));
   right.insertAdjacentHTML("beforeend", `<button class="account-btn" type="button" id="account-btn" aria-label="Tu cuenta">${icons.user}</button>`);
 
   document.body.insertAdjacentHTML("beforeend", `

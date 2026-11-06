@@ -15,14 +15,14 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;0,6..96,700;1,6..96,400&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.css" integrity="sha384-MinO0mNliZ3vwppuPOUnGa+iq619pfMhLVUXfC4LHwSCvF9H+6P/KO4Q7qBOYV5V" crossorigin="anonymous">
-<link rel="stylesheet" href="css/site.css?v=202611061431">
-<link rel="stylesheet" href="css/admin.css?v=202611061431">
+<link rel="stylesheet" href="css/site.css?v=202611061449">
+<link rel="stylesheet" href="css/admin.css?v=202611061449">
 </head>
 <body>
 
 <div class="ticker" aria-hidden="true"><div>
-  <span>Noviciado Run Club</span><span>Corre</span><span>Café</span><span>DJ</span><span>Malasaña</span><span>Nobody is ever really in a hurry</span>
-  <span>Noviciado Run Club</span><span>Corre</span><span>Café</span><span>DJ</span><span>Malasaña</span><span>Nobody is ever really in a hurry</span>
+  <span>Noviciado Run Club</span><span data-i18n="ticker.run">Corre</span><span data-i18n="ticker.coffee">Café</span><span>DJ</span><span>Malasaña</span><span dir="ltr">Nobody is ever really in a hurry</span>
+  <span>Noviciado Run Club</span><span data-i18n="ticker.run">Corre</span><span data-i18n="ticker.coffee">Café</span><span>DJ</span><span>Malasaña</span><span dir="ltr">Nobody is ever really in a hurry</span>
 </div></div>
 
 <header class="topbar">
@@ -30,23 +30,24 @@
     <div class="brand-mark" aria-hidden="true">N</div>
     <span class="brand-name">Run Club</span>
   </div>
-  <nav class="nav" aria-label="Secciones">
-    <a href="#evento">Evento</a><a href="#ruta">Ruta</a><a href="#post-run">Post-run</a><a href="#tarjeta">Tarjeta</a>
+  <nav class="nav" aria-label="Secciones" data-i18n-attr="aria-label:nav.label">
+    <a href="#evento" data-i18n="nav.event">Evento</a><a href="#ruta" data-i18n="nav.route">Ruta</a><a href="#post-run" data-i18n="nav.postrun">Post-run</a><a href="#tarjeta" data-i18n="nav.card">Tarjeta</a>
   </nav>
-  <span class="pill" id="status-pill">Plazas abiertas</span>
-  <a class="my-card" id="my-card" href="tarjeta.html" hidden>Mi tarjeta</a>
+  <div class="lang" id="lang"></div>
+  <span class="pill" id="status-pill" data-i18n="status.open">Plazas abiertas</span>
+  <a class="my-card" id="my-card" href="tarjeta.html" hidden data-i18n="header.mycard">Mi tarjeta</a>
 </header>
 
 <main class="wrap">
 
   <section class="card poster">
     <span class="eyebrow">Noviciado · Run Club</span>
-    <h1 class="gold-text">Run…</h1>
-    <p class="tagline gold-text">Nobody is ever really in a hurry.</p>
-    <p class="lead">Salimos juntos desde el café, corremos una ruta que eliges tú y volvemos a Noviciado. Allí te espera tu café, algo de beber y un DJ pinchando.</p>
+    <h1 class="gold-text" dir="ltr">Run…</h1>
+    <p class="tagline gold-text" dir="ltr">Nobody is ever really in a hurry.</p>
+    <p class="lead" data-i18n="hero.lead">Salimos juntos desde el café, corremos una ruta que eliges tú y volvemos a Noviciado. Allí te espera tu café, algo de beber y un DJ pinchando.</p>
     <div class="hero-actions">
-      <button class="btn-gold" type="button" data-open>Apúntate</button>
-      <a class="btn-line" href="#ruta">Ver la ruta</a>
+      <button class="btn-gold" type="button" data-open data-i18n="hero.join">Apúntate</button>
+      <a class="btn-line" href="#ruta" data-i18n="hero.route">Ver la ruta</a>
     </div>
     <svg class="route" viewBox="0 0 280 90" fill="none" aria-hidden="true">
       <path d="M10 70 C 50 10, 90 10, 120 45 S 190 85, 220 40 S 262 20, 270 30" stroke="url(#g)" stroke-width="2" stroke-linecap="round"/>
@@ -54,33 +55,33 @@
       <circle cx="270" cy="30" r="5" stroke="#d9b56a" stroke-width="2"/>
       <defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#a9843f"/><stop offset="1" stop-color="#f6e2a8"/></linearGradient></defs>
     </svg>
-    <span class="coords">MADRID · 40.4255° N · 3.7083° O</span>
+    <span class="coords" data-i18n="hero.coords">MADRID · 40.4255° N · 3.7083° O</span>
   </section>
 
   <div class="split" id="evento">
     <section class="card section">
-      <span class="eyebrow">Cómo funciona</span>
-      <h2>Salimos del café,<br>volvemos al café.</h2>
+      <span class="eyebrow" data-i18n="how.eyebrow">Cómo funciona</span>
+      <h2 data-i18n-html="how.title">Salimos del café,<br>volvemos al café.</h2>
       <ol class="steps">
-        <li><b>Apúntate y vota</b>Al inscribirte nos dices cuánto quieres correr y cómo de dura quieres la ruta.</li>
-        <li><b>Publicamos la ruta</b>Con lo que vote la gente trazamos el recorrido y lo subimos aquí antes del evento.</li>
-        <li><b>Corre y quédate</b>Volvemos a Noviciado a la vez y empieza el post-run, con el DJ.</li>
+        <li data-i18n-html="how.s1"><b>Apúntate y vota</b>Al inscribirte nos dices cuánto quieres correr y cómo de dura quieres la ruta.</li>
+        <li data-i18n-html="how.s2"><b>Publicamos la ruta</b>Con lo que vote la gente trazamos el recorrido y lo subimos aquí antes del evento.</li>
+        <li data-i18n-html="how.s3"><b>Corre y quédate</b>Volvemos a Noviciado a la vez y empieza el post-run, con el DJ.</li>
       </ol>
       <div class="facts">
-        <div class="fact"><b id="fact-km">10</b><span>km máx.</span></div>
-        <div class="fact"><b>3</b><span>ritmos</span></div>
-        <div class="fact"><b>0 €</b><span>siempre</span></div>
+        <div class="fact"><b id="fact-km">10</b><span data-i18n="fact.km">km máx.</span></div>
+        <div class="fact"><b>3</b><span data-i18n="fact.paces">ritmos</span></div>
+        <div class="fact"><b>0 €</b><span data-i18n="fact.always">siempre</span></div>
       </div>
     </section>
 
     <aside class="aside">
       <section class="card event">
-        <span class="eyebrow">Próximo evento</span>
+        <span class="eyebrow" data-i18n="ev.eyebrow">Próximo evento</span>
         <div class="date-row">
           <div class="date-box"><b id="ev-day">—</b><span id="ev-month">&nbsp;</span></div>
           <div>
-            <span class="eyebrow" id="ev-when">Por anunciar</span>
-            <h3 id="ev-title">Próximamente</h3>
+            <span class="eyebrow" id="ev-when" data-i18n="ev.tba">Por anunciar</span>
+            <h3 id="ev-title" data-i18n="ev.soon">Próximamente</h3>
             <p id="ev-place">Noviciado Coffee Shop<br>Malasaña, Madrid</p>
           </div>
         </div>
@@ -92,22 +93,22 @@
         </div>
 
         <div class="counter">
-          <div class="counter-top"><b class="gold-text" id="count">0</b><span>de <span id="cap">—</span> plazas reservadas</span></div>
+          <div class="counter-top"><b class="gold-text" id="count">0</b><span><span data-i18n="ev.of">de</span> <span id="cap">—</span> <span data-i18n="ev.booked">plazas reservadas</span></span></div>
           <div class="bar"><i id="bar"></i></div>
           <small id="left"></small>
         </div>
 
         <div class="ticket">
           <div>
-            <span class="eyebrow">Entrada gratuita</span>
+            <span class="eyebrow" data-i18n="ticket.eyebrow">Entrada gratuita</span>
             <h4>Run + post-run</h4>
-            <p>Gratis · plazas limitadas</p>
+            <p data-i18n="ticket.sub">Gratis · plazas limitadas</p>
           </div>
-          <button class="btn-gold btn-round" type="button" data-open aria-label="Reservar mi plaza">
+          <button class="btn-gold btn-round" type="button" data-open aria-label="Reservar mi plaza" data-i18n-attr="aria-label:f.submit">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </button>
         </div>
-        <p class="note">No hace falta entrada: al llegar, di tu nombre.</p>
+        <p class="note" data-i18n="ev.noTicket">No hace falta entrada: al llegar, di tu nombre.</p>
       </section>
     </aside>
   </div>
@@ -116,8 +117,8 @@
     <div class="section">
       <div class="section-head">
         <div>
-          <span class="eyebrow">Ficha de la carrera</span>
-          <h2 id="route-title">El recorrido</h2>
+          <span class="eyebrow" data-i18n="route.eyebrow">Ficha de la carrera</span>
+          <h2 id="route-title" data-i18n="route.title">El recorrido</h2>
         </div>
         <div class="tabs" id="route-tabs" role="tablist" hidden></div>
       </div>
@@ -125,31 +126,31 @@
     <div id="route-body">
       <div class="route-empty">
         <svg viewBox="0 0 280 90" fill="none" aria-hidden="true"><path d="M10 70 C 50 10, 90 10, 120 45 S 190 85, 220 40 S 262 20, 270 30" stroke="#5f5c57" stroke-width="2" stroke-dasharray="4 8" stroke-linecap="round"/><circle cx="10" cy="70" r="5" fill="#d9b56a"/></svg>
-        <p id="route-empty-text"><b style="color:var(--text);font-weight:500">La ruta la decidimos entre todos.</b> Cuando te apuntas, votas cuánto quieres correr y cómo de dura la quieres. Unos días antes del evento publicamos aquí el recorrido, con el mapa, el desnivel y el enlace para llevarlo en el móvil.</p>
-        <button class="btn-line small" type="button" data-open id="route-empty-btn">Apúntate y vota</button>
+        <p id="route-empty-text" data-i18n-html="route.emptyDefault"><b style="color:var(--text);font-weight:500">La ruta la decidimos entre todos.</b> Cuando te apuntas, votas cuánto quieres correr y cómo de dura la quieres. Unos días antes del evento publicamos aquí el recorrido, con el mapa, el desnivel y el enlace para llevarlo en el móvil.</p>
+        <button class="btn-line small" type="button" data-open id="route-empty-btn" data-i18n="route.joinVote">Apúntate y vota</button>
       </div>
     </div>
   </section>
 
   <section class="card section" id="post-run">
     <span class="eyebrow">Post-run</span>
-    <h2>La carrera dura una hora.<br>El post-run, toda la mañana.</h2>
-    <p>Correr es la excusa. Al volver, Noviciado es nuestro: pides lo tuyo, te quedas a charlar y suena música en directo.</p>
+    <h2 data-i18n-html="pr.title">La carrera dura una hora.<br>El post-run, toda la mañana.</h2>
+    <p data-i18n="pr.lead">Correr es la excusa. Al volver, Noviciado es nuestro: pides lo tuyo, te quedas a charlar y suena música en directo.</p>
     <div class="tiles">
       <div class="tile">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17M8 3c0 1.5 1 1.5 1 3M12 3c0 1.5 1 1.5 1 3"/></svg>
-        <h3>Café de especialidad</h3>
-        <p>Recién hecho, para recuperar el aliento.</p>
+        <h3 data-i18n="pr.coffeeT">Café de especialidad</h3>
+        <p data-i18n="pr.coffee">Recién hecho, para recuperar el aliento.</p>
       </div>
       <div class="tile">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l-1.5 17a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1z"/><path d="M6.5 8h11"/></svg>
-        <h3>Algo de beber</h3>
-        <p>Zumos, refrescos y lo que te pida el cuerpo después de correr.</p>
+        <h3 data-i18n="pr.drinkT">Algo de beber</h3>
+        <p data-i18n="pr.drink">Zumos, refrescos y lo que te pida el cuerpo después de correr.</p>
       </div>
       <div class="tile">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3a9 9 0 0 1 9 9" stroke-linecap="round"/></svg>
-        <h3>DJ en directo</h3>
-        <p>Música desde que llega el primero hasta que se va el último.</p>
+        <h3 data-i18n="pr.djT">DJ en directo</h3>
+        <p data-i18n="pr.dj">Música desde que llega el primero hasta que se va el último.</p>
       </div>
     </div>
   </section>
@@ -157,20 +158,19 @@
   <section class="card section" id="tarjeta">
     <div class="member">
       <div>
-        <span class="eyebrow">Tarjeta de socio</span>
-        <h2>Cada carrera suma.</h2>
-        <p>Al apuntarte por primera vez te llevas tu tarjeta del club. Enséñala al llegar a cada quedada: escaneamos tu código y sumas <b style="color:var(--text)">10 puntos</b>. Cuantos más puntos, más nivel.</p>
-        <p>En Android la guardas en Google Wallet; en iPhone, en la pantalla de inicio.</p>
+        <span class="eyebrow" data-i18n="card.eyebrow">Tarjeta de socio</span>
+        <h2 data-i18n="card.title">Cada carrera suma.</h2>
+        <p data-i18n-html="card.lead">Al apuntarte por primera vez te llevas tu tarjeta del club. Enséñala al llegar a cada quedada: escaneamos tu código y sumas <b style="color:var(--text)">10 puntos</b>. Cuantos más puntos, más nivel.</p>
         <ul class="levels" id="levels"></ul>
       </div>
       <div class="pass" id="preview-pass" data-level="novicio" aria-hidden="true">
         <div>
           <span class="eyebrow">Noviciado Run Club</span>
-          <h4 class="gold-text">Tu nombre</h4>
+          <h4 class="gold-text" data-i18n="card.yourName">Tu nombre</h4>
           <span class="pass-level" id="preview-level">Spark · 0 puntos</span>
         </div>
         <div class="pass-foot">
-          <div><small>Socio</small><b>Desde hoy</b></div>
+          <div><small data-i18n="card.member">Socio</small><b data-i18n="card.today">Desde hoy</b></div>
           <code>NRC-····</code>
         </div>
       </div>
@@ -178,13 +178,13 @@
   </section>
 
   <section class="card section faq">
-    <span class="eyebrow">Preguntas frecuentes</span>
+    <span class="eyebrow" data-i18n="faq.eyebrow">Preguntas frecuentes</span>
     <div style="margin-top:12px">
-      <details><summary>¿Qué nivel hace falta?</summary><p>Ninguno especial. Hay tres ritmos y, si la gente vota distinto, dos recorridos: uno más corto y otro más largo para los rápidos, para que todos lleguemos a la vez.</p></details>
-      <details><summary>¿Hay que pagar algo?</summary><p>No. Correr es gratis. Solo pedimos que reserves para saber cuántos somos.</p></details>
-      <details><summary>¿Cuándo se publica la ruta?</summary><p>Unos días antes del evento, en esta misma página. Puedes abrirla en Google Maps o descargarla para tu reloj.</p></details>
-      <details><summary>¿Y si llueve?</summary><p>Corremos igual, salvo alerta. Si se cancela, lo avisamos aquí en la web.</p></details>
-      <details><summary>¿Dónde quedamos?</summary><p>En la puerta de Noviciado Coffee Shop, calle del Noviciado, Malasaña.</p></details>
+      <details><summary data-i18n="faq.q1">¿Qué nivel hace falta?</summary><p data-i18n="faq.a1">Ninguno especial. Hay tres ritmos y, si la gente vota distinto, dos recorridos: uno más corto y otro más largo para los rápidos, para que todos lleguemos a la vez.</p></details>
+      <details><summary data-i18n="faq.q2">¿Hay que pagar algo?</summary><p data-i18n="faq.a2">No. Correr es gratis. Solo pedimos que reserves para saber cuántos somos.</p></details>
+      <details><summary data-i18n="faq.q3">¿Cuándo se publica la ruta?</summary><p data-i18n="faq.a3">Unos días antes del evento, en esta misma página. Puedes abrirla en Google Maps o descargarla para tu reloj.</p></details>
+      <details><summary data-i18n="faq.q4">¿Y si llueve?</summary><p data-i18n="faq.a4">Corremos igual, salvo alerta. Si se cancela, lo avisamos aquí en la web.</p></details>
+      <details><summary data-i18n="faq.q5">¿Dónde quedamos?</summary><p data-i18n="faq.a5">En la puerta de Noviciado Coffee Shop, calle del Noviciado, Malasaña.</p></details>
     </div>
   </section>
 
@@ -199,18 +199,18 @@
 </main>
 
 <div class="dock">
-  <span><b id="dock-title">Run Club</b> · Gratis</span>
-  <button class="btn-gold" type="button" data-open>Reservar</button>
+  <span><b id="dock-title">Run Club</b> · <span data-i18n="dock.free">Gratis</span></span>
+  <button class="btn-gold" type="button" data-open data-i18n="dock.book">Reservar</button>
 </div>
 
 <div class="modal" id="modal" aria-hidden="true">
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
     <div class="sheet-head">
       <div>
-        <span class="eyebrow" id="sheet-step">Paso 1 de 2 · Tus datos</span>
+        <span class="eyebrow" id="sheet-step" data-i18n="f.step1">Paso 1 de 2 · Tus datos</span>
         <h3 id="sheet-title">Run Club</h3>
       </div>
-      <button class="close" type="button" data-close aria-label="Cerrar">×</button>
+      <button class="close" type="button" data-close aria-label="Cerrar" data-i18n-attr="aria-label:close">×</button>
     </div>
     <div class="stepper" aria-hidden="true"><i class="on"></i><i id="stepper-2"></i></div>
 
@@ -220,53 +220,53 @@
         <div class="step" id="identity-fields">
         <div class="field">
           <input id="name" name="name" type="text" autocomplete="name" placeholder=" " required minlength="3" maxlength="80">
-          <label for="name">Nombre y apellido</label>
+          <label for="name" data-i18n="f.name">Nombre y apellido</label>
         </div>
         <div class="field">
           <input id="email" name="email" type="email" autocomplete="email" placeholder=" " required maxlength="120">
-          <label for="email">Correo electrónico</label>
+          <label for="email" data-i18n="f.email">Correo electrónico</label>
         </div>
         <div class="field">
           <input id="email2" name="email2" type="email" autocomplete="off" placeholder=" " required>
-          <label for="email2">Repite el correo</label>
+          <label for="email2" data-i18n="f.email2">Repite el correo</label>
         </div>
-        <p class="hint" id="email-hint">Con tu correo te reconocemos como socio, asegúrate de que está bien.</p>
+        <p class="hint" id="email-hint" data-i18n="f.emailHint">Con tu correo te reconocemos como socio, asegúrate de que está bien.</p>
         <div class="field">
           <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder=" " required>
-          <label for="phone">Teléfono</label>
+          <label for="phone" data-i18n="f.phone">Teléfono</label>
         </div>
         <div class="field">
           <input id="password" name="password" type="password" autocomplete="new-password" placeholder=" " required minlength="8" maxlength="128">
-          <label for="password">Contraseña de tu cuenta</label>
+          <label for="password" data-i18n="f.password">Contraseña de tu cuenta</label>
         </div>
-        <p class="hint" id="password-hint">Mínimo 8 caracteres. Con tu correo y esta contraseña entras en tu cuenta, en el icono de arriba a la derecha. Si ya tienes cuenta, pon tu contraseña.</p>
+        <p class="hint" id="password-hint" data-i18n="f.passwordHint">Mínimo 8 caracteres. Con tu correo y esta contraseña entras en tu cuenta, en el icono de arriba a la derecha. Si ya tienes cuenta, pon tu contraseña.</p>
 
-        <span class="eyebrow group-label">Sexo <span class="optional">· opcional</span></span>
+        <span class="eyebrow group-label" data-i18n-html="f.gender">Sexo <span class="optional">· opcional</span></span>
         <div class="chips four" id="gender-chips" role="radiogroup"></div>
         </div>
 
-        <button class="btn-gold btn-block" type="button" id="next" disabled>Siguiente</button>
+        <button class="btn-gold btn-block" type="button" id="next" disabled data-i18n="f.next">Siguiente</button>
       </div>
 
       <div class="step" id="step-2" hidden>
-        <span class="eyebrow group-label">Tu ritmo</span>
+        <span class="eyebrow group-label" data-i18n="f.pace">Tu ritmo</span>
         <div class="chips" id="pace-chips" role="radiogroup"></div>
 
         <div class="step" id="vote-fields">
-          <span class="eyebrow group-label">¿Cómo de intensa quieres la ruta?</span>
+          <span class="eyebrow group-label" data-i18n="f.intensityQ">¿Cómo de intensa quieres la ruta?</span>
           <div class="chips" id="intensity-chips" role="radiogroup"></div>
 
-          <span class="eyebrow group-label">¿Cuánto quieres correr?</span>
+          <span class="eyebrow group-label" data-i18n="f.distanceQ">¿Cuánto quieres correr?</span>
           <div class="chips two" id="distance-chips" role="radiogroup"></div>
-          <p class="hint" id="vote-hint">Con los votos de todos decidimos la ruta. Si hay mucha diferencia, hacemos dos.</p>
+          <p class="hint" id="vote-hint" data-i18n="f.voteHint">Con los votos de todos decidimos la ruta. Si hay mucha diferencia, hacemos dos.</p>
         </div>
         <p class="vote-closed" id="vote-closed" hidden></p>
 
-        <label class="check"><input type="checkbox" name="terms" required><span>Soy mayor de 18 años y acepto la <a href="https://noviciado.com/privacy" target="_blank" rel="noopener">política de privacidad</a> de Noviciado.</span></label>
+        <label class="check"><input type="checkbox" name="terms" required><span data-i18n-html="f.terms">Soy mayor de 18 años y acepto la <a href="https://noviciado.com/privacy" target="_blank" rel="noopener">política de privacidad</a> de Noviciado.</span></label>
 
         <p class="form-error" id="form-error" role="alert" hidden></p>
-        <button class="btn-gold btn-block" type="submit" id="submit" disabled>Reservar mi plaza</button>
-        <button class="link-back" type="button" id="back">← Volver a tus datos</button>
+        <button class="btn-gold btn-block" type="submit" id="submit" disabled data-i18n="f.submit">Reservar mi plaza</button>
+        <button class="link-back" type="button" id="back" data-i18n="f.back">← Volver a tus datos</button>
       </div>
     </form>
 
@@ -278,16 +278,16 @@
           <span class="pass-level" id="pass-level"></span>
         </div>
         <div class="pass-foot">
-          <div><small>Evento</small><b id="pass-event"></b></div>
+          <div><small data-i18n="done.event">Evento</small><b id="pass-event"></b></div>
           <code id="pass-code"></code>
         </div>
       </div>
-      <h3>¡Ya estás inscrito!</h3>
+      <h3 data-i18n="done.title">¡Ya estás inscrito!</h3>
       <p id="done-text"></p>
       <div class="actions">
-        <button class="btn-gold btn-block" type="button" id="done-account" hidden>Ver mi cuenta y mi QR</button>
-        <button class="btn-line" type="button" id="done-wallet" hidden>Añadir a Google Wallet</button>
-        <button class="btn-line" type="button" data-close>Hecho</button>
+        <button class="btn-gold btn-block" type="button" id="done-account" hidden data-i18n="done.account">Ver mi cuenta y mi QR</button>
+        <button class="btn-line" type="button" id="done-wallet" hidden data-i18n="done.wallet">Añadir a Google Wallet</button>
+        <button class="btn-line" type="button" data-close data-i18n="done.ok">Hecho</button>
       </div>
     </div>
   </div>
@@ -297,26 +297,36 @@
 <script type="importmap">
 {
   "imports": {
-    "./js/account.js": "./js/account.js?v=202611061431",
-    "./js/admin-checkin.js": "./js/admin-checkin.js?v=202611061431",
-    "./js/admin-route.js": "./js/admin-route.js?v=202611061431",
-    "./js/admin.js": "./js/admin.js?v=202611061431",
-    "./js/card.js": "./js/card.js?v=202611061431",
-    "./js/club.js": "./js/club.js?v=202611061431",
-    "./js/config.js": "./js/config.js?v=202611061431",
-    "./js/routemap.js": "./js/routemap.js?v=202611061431",
-    "./js/rutas/api.js": "./js/rutas/api.js?v=202611061431",
-    "./js/rutas/config.js": "./js/rutas/config.js?v=202611061431",
-    "./js/rutas/datasets.js": "./js/rutas/datasets.js?v=202611061431",
-    "./js/rutas/geo.js": "./js/rutas/geo.js?v=202611061431",
-    "./js/rutas/mapstyle.js": "./js/rutas/mapstyle.js?v=202611061431",
-    "./js/rutas/planner.js": "./js/rutas/planner.js?v=202611061431",
-    "./js/site.js": "./js/site.js?v=202611061431"
+    "./js/account.js": "./js/account.js?v=202611061449",
+    "./js/admin-checkin.js": "./js/admin-checkin.js?v=202611061449",
+    "./js/admin-route.js": "./js/admin-route.js?v=202611061449",
+    "./js/admin.js": "./js/admin.js?v=202611061449",
+    "./js/card.js": "./js/card.js?v=202611061449",
+    "./js/club.js": "./js/club.js?v=202611061449",
+    "./js/config.js": "./js/config.js?v=202611061449",
+    "./js/i18n.js": "./js/i18n.js?v=202611061449",
+    "./js/i18n/ar.js": "./js/i18n/ar.js?v=202611061449",
+    "./js/i18n/de.js": "./js/i18n/de.js?v=202611061449",
+    "./js/i18n/en.js": "./js/i18n/en.js?v=202611061449",
+    "./js/i18n/es.js": "./js/i18n/es.js?v=202611061449",
+    "./js/i18n/fr.js": "./js/i18n/fr.js?v=202611061449",
+    "./js/i18n/hr.js": "./js/i18n/hr.js?v=202611061449",
+    "./js/i18n/it.js": "./js/i18n/it.js?v=202611061449",
+    "./js/i18n/pt.js": "./js/i18n/pt.js?v=202611061449",
+    "./js/i18n/ru.js": "./js/i18n/ru.js?v=202611061449",
+    "./js/routemap.js": "./js/routemap.js?v=202611061449",
+    "./js/rutas/api.js": "./js/rutas/api.js?v=202611061449",
+    "./js/rutas/config.js": "./js/rutas/config.js?v=202611061449",
+    "./js/rutas/datasets.js": "./js/rutas/datasets.js?v=202611061449",
+    "./js/rutas/geo.js": "./js/rutas/geo.js?v=202611061449",
+    "./js/rutas/mapstyle.js": "./js/rutas/mapstyle.js?v=202611061449",
+    "./js/rutas/planner.js": "./js/rutas/planner.js?v=202611061449",
+    "./js/site.js": "./js/site.js?v=202611061449"
   }
 }
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js" integrity="sha384-mZT2gIty7ZDdOGkxfP6joZcYdMW1Jvj9dRlfpTmaJAKKXTqzygtB22k7FLe+KZC1" crossorigin="anonymous"></script>
-<script type="module" src="js/site.js?v=202611061431"></script>
-<script type="module" src="js/admin.js?v=202611061431"></script>
+<script type="module" src="js/site.js?v=202611061449"></script>
+<script type="module" src="js/admin.js?v=202611061449"></script>
 </body>
 </html>
