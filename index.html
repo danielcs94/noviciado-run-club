@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Siempre por https: sin él el móvil no deja usar la cámara para fichar los QR -->
+<script>if (location.protocol === "http:" && location.hostname === "runclub.noviciado.com") location.replace("https://" + location.host + location.pathname + location.search + location.hash);</script>
 <meta name="theme-color" content="#0b0b0c">
 <meta name="referrer" content="no-referrer">
 <link rel="icon" href="img/icon-192.png">
@@ -13,8 +15,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;0,6..96,700;1,6..96,400&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.css" integrity="sha384-MinO0mNliZ3vwppuPOUnGa+iq619pfMhLVUXfC4LHwSCvF9H+6P/KO4Q7qBOYV5V" crossorigin="anonymous">
-<link rel="stylesheet" href="css/site.css?v=202611051820">
-<link rel="stylesheet" href="css/admin.css?v=202611051820">
+<link rel="stylesheet" href="css/site.css?v=202611061401">
+<link rel="stylesheet" href="css/admin.css?v=202611061401">
 </head>
 <body>
 
@@ -295,26 +297,26 @@
 <script type="importmap">
 {
   "imports": {
-    "./js/account.js": "./js/account.js?v=202611051820",
-    "./js/admin-checkin.js": "./js/admin-checkin.js?v=202611051820",
-    "./js/admin-route.js": "./js/admin-route.js?v=202611051820",
-    "./js/admin.js": "./js/admin.js?v=202611051820",
-    "./js/card.js": "./js/card.js?v=202611051820",
-    "./js/club.js": "./js/club.js?v=202611051820",
-    "./js/config.js": "./js/config.js?v=202611051820",
-    "./js/routemap.js": "./js/routemap.js?v=202611051820",
-    "./js/rutas/api.js": "./js/rutas/api.js?v=202611051820",
-    "./js/rutas/config.js": "./js/rutas/config.js?v=202611051820",
-    "./js/rutas/datasets.js": "./js/rutas/datasets.js?v=202611051820",
-    "./js/rutas/geo.js": "./js/rutas/geo.js?v=202611051820",
-    "./js/rutas/mapstyle.js": "./js/rutas/mapstyle.js?v=202611051820",
-    "./js/rutas/planner.js": "./js/rutas/planner.js?v=202611051820",
-    "./js/site.js": "./js/site.js?v=202611051820"
+    "./js/account.js": "./js/account.js?v=202611061401",
+    "./js/admin-checkin.js": "./js/admin-checkin.js?v=202611061401",
+    "./js/admin-route.js": "./js/admin-route.js?v=202611061401",
+    "./js/admin.js": "./js/admin.js?v=202611061401",
+    "./js/card.js": "./js/card.js?v=202611061401",
+    "./js/club.js": "./js/club.js?v=202611061401",
+    "./js/config.js": "./js/config.js?v=202611061401",
+    "./js/routemap.js": "./js/routemap.js?v=202611061401",
+    "./js/rutas/api.js": "./js/rutas/api.js?v=202611061401",
+    "./js/rutas/config.js": "./js/rutas/config.js?v=202611061401",
+    "./js/rutas/datasets.js": "./js/rutas/datasets.js?v=202611061401",
+    "./js/rutas/geo.js": "./js/rutas/geo.js?v=202611061401",
+    "./js/rutas/mapstyle.js": "./js/rutas/mapstyle.js?v=202611061401",
+    "./js/rutas/planner.js": "./js/rutas/planner.js?v=202611061401",
+    "./js/site.js": "./js/site.js?v=202611061401"
   }
 }
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js" integrity="sha384-mZT2gIty7ZDdOGkxfP6joZcYdMW1Jvj9dRlfpTmaJAKKXTqzygtB22k7FLe+KZC1" crossorigin="anonymous"></script>
-<script type="module" src="js/site.js?v=202611051820"></script>
-<script type="module" src="js/admin.js?v=202611051820"></script>
+<script type="module" src="js/site.js?v=202611061401"></script>
+<script type="module" src="js/admin.js?v=202611061401"></script>
 </body>
 </html>
