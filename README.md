@@ -2,7 +2,7 @@
 
 Web del run club de Noviciado Coffee Shop (Malasaña, Madrid). La gente se apunta al próximo evento y vota cuánto quiere correr y cómo de dura quiere la ruta. Con esos votos genero el recorrido desde el panel de admin, lo publico en la web y al volver al café hay post-run con DJ.
 
-Cada persona que se apunta por primera vez se lleva una tarjeta de socio con un QR. En cada quedada se la escaneo desde el panel y suma 10 puntos, que la hacen subir de nivel (Novicio, Habitual, Fondista y Leyenda).
+Cada persona que se apunta por primera vez se lleva una tarjeta de socio con un QR. En cada quedada se la escaneo desde el panel y suma 10 puntos, que la hacen subir de nivel (Spark, Rolling, Lifted y High Runner).
 
 ## Cómo está montado
 

@@ -4,10 +4,10 @@
 export const CHECKIN_POINTS = 10;
 
 export const LEVELS = [
-  { key: 'novicio', name: 'Novicio', from: 0 },
-  { key: 'habitual', name: 'Habitual', from: 50 },
-  { key: 'fondista', name: 'Fondista', from: 150 },
-  { key: 'leyenda', name: 'Leyenda', from: 400 },
+  { key: 'novicio', name: 'Spark', from: 0 },
+  { key: 'habitual', name: 'Rolling', from: 50 },
+  { key: 'fondista', name: 'Lifted', from: 150 },
+  { key: 'leyenda', name: 'High Runner', from: 400 },
 ] as const;
 
 export function levelFor(points: number) {
