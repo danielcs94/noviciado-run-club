@@ -134,15 +134,43 @@ async function addElevation(c) {
 
 function addSurface(c, idx) {
   const counts = { asfalto: 0, parque: 0, tierra: 0 };
+  let narrow = 0, traffic = 0;
   c.cats = c.samples.map((p) => {
     const cat = idx.classify(p) ?? 'asfalto';
-    counts[cat]++;
+    // Para la superficie, avenidas, calles estrechas y cruces son asfalto
+    counts[cat in counts ? cat : 'asfalto']++;
+    // Estrecha: va por ella o por su acera (a < 8 m). Tráfico: a < 15 m de una avenida.
+    if (cat === 'estrecha' || idx.near(p, 'estrecha', 8)) narrow++;
+    if (cat === 'avenida' || idx.near(p, 'avenida', 15)) traffic++;
     return cat;
   });
   const total = c.samples.length || 1;
   c.surface = Object.fromEntries(Object.entries(counts).map(([k, v]) => [k, (100 * v) / total]));
+  c.narrow = (100 * narrow) / total;
+  c.traffic = (100 * traffic) / total;
   c.signalPoints = idx.signalsAlong(c.samples);
   c.signals = c.signalPoints.length;
+  c.crossings = idx.crossingsAlong(c.samples).length;
+}
+
+// ---------------------------------------------------------------------------
+// Tamaño del grupo: con 5 personas vale cualquier acera; con 40 hace falta sitio,
+// pocos cruces (cada uno parte el grupo) y lejos de los coches. 0 = hasta 8 personas.
+// ---------------------------------------------------------------------------
+export function groupWeight(people) {
+  return Math.max(0, Math.min(3, ((people ?? 0) - 8) / 12)); // 20 → 1 · 32 → 2 · 44+ → 3
+}
+
+// Opciones de Valhalla para que el grupo grande no se meta por callejones y calles estrechas
+function groupCosting(g, walkway) {
+  if (!g) return {};
+  return {
+    alley_factor: 2 + 2 * g,                          // callejones
+    service_factor: 1 + g,                            // vías de servicio, entradas de garaje
+    driveway_factor: 5 + 3 * g,
+    use_living_streets: Math.max(0.1, 0.6 - 0.15 * g), // calles de plataforma única (estrechas en el centro)
+    walkway_factor: Math.max(0.5, (walkway ?? 0.8) - 0.1 * g), // aún más a favor de paseos y parques
+  };
 }
 
 // % del recorrido que repite calle ya pisada (> 400 m antes): a nadie le gusta ir y volver por el mismo sitio.
@@ -205,14 +233,16 @@ export const PREFERENCES = {
   ciudad: { label: 'Ciudad', hint: 'Bucles por las calles de Madrid, sin desviarse a buscar parques.', green: 0, urban: 0, walkway: 1, city: 0.4 },
 };
 
-function score(c, targetKm, it, pref = PREFERENCES.parques) {
+function score(c, targetKm, it, pref = PREFERENCES.parques, g = 0) {
   const gpk = c.gain == null ? (it.gainPerKm[0] + it.gainPerKm[1]) / 2 : c.gain / c.km; // sin datos: neutro
   const [lo, hi] = it.gainPerKm;
   const gainDev = Math.max(0, lo - gpk) + Math.max(0, gpk - hi);
   const asphalt = c.surface ? c.surface.asfalto : 45;
   return Math.abs(targetKm - c.km) * 10 + gainDev * it.wGain
     + ((c.signals ?? 8) * it.wSignals + asphalt * it.wAsphalt) * pref.urban
-    + (100 - asphalt) * (pref.city ?? 0) + c.overlap * 0.5; // en "Ciudad", mejor cuanto más calle
+    + (100 - asphalt) * (pref.city ?? 0) + c.overlap * 0.5 // en "Ciudad", mejor cuanto más calle
+    // Grupo grande: calles estrechas, avenidas con tráfico y cruces (siempre un poco, aunque sean pocos)
+    + (0.25 + g) * ((c.narrow ?? 0) * 0.8 + (c.traffic ?? 0) * 0.5 + (c.crossings ?? 0) * 1.5);
 }
 
 // Ejecuta tareas asíncronas con un máximo de `limit` a la vez.
@@ -232,23 +262,26 @@ async function pool(items, limit, fn) {
 // ---------------------------------------------------------------------------
 // API pública
 // ---------------------------------------------------------------------------
-export async function plan({ targetKm, intensity, prefer = 'parques', maxKm = MAX_KM, seed = Date.now(), onProgress = () => {} }) {
+export async function plan({ targetKm, intensity, prefer = 'parques', maxKm = MAX_KM, people = 0, seed = Date.now(), onProgress = () => {} }) {
   maxKm = Math.min(maxKm, MAX_KM);
   if (!(targetKm > 0 && targetKm <= maxKm)) throw new Error(`La distancia debe estar entre 0 y ${maxKm} km`);
   const it = INTENSITIES[intensity];
   const pref = PREFERENCES[prefer] ?? PREFERENCES.parques;
   // En "Ciudad" las aceras valen lo mismo que los paseos peatonales: no se desvía a buscarlos
-  const prefs = { use_hills: it.useHills, ...(pref.walkway ? { walkway_factor: pref.walkway } : {}) };
+  const g = groupWeight(people);
+  const prefs = { use_hills: it.useHills, ...(pref.walkway ? { walkway_factor: pref.walkway } : {}), ...groupCosting(g, pref.walkway) };
   const rand = rng(seed);
+  // Con un grupo grande hay más que descartar: se trazan más bucles para tener donde elegir
+  const count = g >= 1 ? CANDIDATES + 2 : CANDIDATES;
   onProgress('Cargando mapa de superficies…', 0.02);
   const idx = await loadSurface();
 
   // Un bucle por cuadrante, con una orientación inicial aleatoria: alternativas variadas.
   const base = rand() * 2 * Math.PI;
   // En "Mezcla" se alternan (parque, calle, parque, calle) para que no caigan todos del mismo lado.
-  const greenAt = pref.green === 2 ? [true, false, true, false] : Array.from({ length: CANDIDATES }, (_, i) => i < pref.green);
-  const shapes = Array.from({ length: CANDIDATES }, (_, i) => ({
-    ...makeShape(base + (i * Math.PI * 2) / CANDIDATES, rand),
+  const greenAt = Array.from({ length: count }, (_, i) => (pref.green === 2 ? i % 2 === 0 : pref.green > 0));
+  const shapes = Array.from({ length: count }, (_, i) => ({
+    ...makeShape(base + (i * Math.PI * 2) / count, rand),
     green: greenAt[i],
   }));
 
@@ -280,6 +313,7 @@ export async function plan({ targetKm, intensity, prefer = 'parques', maxKm = MA
       direction: COMPASS[Math.round(deg / 45) % 8],
       intensity,
       prefer,
+      people,
     };
     c.samples = resample(c.coords, SAMPLE_M);
     try { await addElevation(c); } catch { c.gain = null; c.profile = []; }
@@ -291,7 +325,7 @@ export async function plan({ targetKm, intensity, prefer = 'parques', maxKm = MA
     c.anchorPoints = c.landmarks.map((l) => ({ name: l.name, at: l.at }));
     c.waypoints = [ORIGIN.name, ...c.landmarks.map((l) => l.name), ORIGIN.name];
     c.minutes = [c.km * it.pace[0], c.km * it.pace[1]];
-    c.score = score(c, targetKm, it, pref);
+    c.score = score(c, targetKm, it, pref, g);
     if (c.km > maxKm) throw new Error(`Límite de ${maxKm} km violado`); // garantía final
     fits.push(c);
   }

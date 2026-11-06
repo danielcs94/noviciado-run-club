@@ -376,3 +376,9 @@ body.is-admin #admin { display: block; }
 @media (max-width: 520px) {
   .admin-tabs button { flex: 1 1 0; padding: 10px 6px; font-size: 11px; letter-spacing: .06em; }
 }
+
+/* ---------- Generador: tamaño del grupo ---------- */
+.gen-people { display: grid; gap: 6px; margin: 0 0 16px; }
+@media (min-width: 700px) { .gen-people { grid-template-columns: 240px 1fr; align-items: center; gap: 16px; } }
+.gen-people .hint { margin: 0; }
+.candidate small.group-stats { display: block; margin-top: 2px; color: var(--dim); }

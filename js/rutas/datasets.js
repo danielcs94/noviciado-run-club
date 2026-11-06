@@ -1,4 +1,4 @@
-// Datos precalculados (ver tools/): superficie + semáforos de OSM y rejilla de elevación.
+// Datos precalculados (ver tools/): superficie, tipo de calle y semáforos de OSM, y rejilla de elevación.
 // Se cargan una vez y se indexan por celdas para consultas instantáneas en el navegador.
 import { haversine, pointSegDist } from './geo.js';
 
@@ -60,10 +60,13 @@ function buildSurfaceIndex(d) {
     return out;
   };
 
+  // Solo parque y tierra son "verde"; avenidas, calles estrechas y cruces cuentan como calle
+  const isGreen = (cat) => d.cats[cat] === 'parque' || d.cats[cat] === 'tierra';
+
   // Metros de senda verde (parque/tierra) por celda: mide cuánto "parque" hay alrededor.
   const greenLen = new Float64Array(rows * cols);
   for (const g of segs) {
-    if (d.cats[g[4]] === 'asfalto') continue;
+    if (!isGreen(g[4])) continue;
     const k = cellOf((g[0] + g[2]) / 2, (g[1] + g[3]) / 2);
     if (k >= 0) greenLen[k] += haversine([g[0], g[1]], [g[2], g[3]]) * (d.cats[g[4]] === 'tierra' ? 1.3 : 1);
   }
@@ -107,12 +110,41 @@ function buildSurfaceIndex(d) {
       let best = null, bestD = Infinity;
       for (const k of neighbours(target)) for (const s of segCells[k]) {
         const g = segs[s];
-        if (d.cats[g[4]] === 'asfalto') continue;
+        if (!isGreen(g[4])) continue;
         const q = project(target, [g[0], g[1]], [g[2], g[3]]);
         const dist = haversine(target, q);
         if (dist < bestD) { bestD = dist; best = q; }
       }
       return best ?? p;
+    },
+    // ¿Hay una vía de esa categoría a menos de `radius` m? (p. ej. ir por la acera de una avenida)
+    near(p, cat, radius) {
+      const want = d.cats.indexOf(cat);
+      for (const k of neighbours(p) ?? []) for (const s of segCells[k]) {
+        const g = segs[s];
+        if (g[4] === want && pointSegDist(p, [g[0], g[1]], [g[2], g[3]]) < radius) return true;
+      }
+      return false;
+    },
+    // Calzadas que el trazado cruza de verdad: pasos de cebra y semáforos por cuyo centro pasa
+    // (a < `radius` m). Los que solo rozas al ir por la acera no cuentan. Agrupados en 30 m.
+    // Cada uno parte el grupo.
+    crossingsAlong(samples, radius = 6) {
+      const want = d.cats.indexOf('cruce');
+      const found = [];
+      const add = (q) => { if (found.every((f) => haversine(f, q) > 30)) found.push(q); };
+      for (const p of samples) {
+        for (const k of neighbours(p) ?? []) {
+          for (const s of segCells[k]) {
+            const g = segs[s];
+            if (g[4] !== want) continue;
+            const mid = [(g[0] + g[2]) / 2, (g[1] + g[3]) / 2];
+            if (haversine(p, mid) < radius) add(mid);
+          }
+          for (const sgn of sigCells[k]) if (haversine(p, sgn) < radius) add(sgn);
+        }
+      }
+      return found;
     },
     // Categoría de la vía más cercana (< 25 m); null si el punto está fuera de la zona.
     classify(p) {

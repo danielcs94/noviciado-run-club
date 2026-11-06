@@ -2,7 +2,7 @@
 // el generador de Rutas Noviciado (en el navegador) y el botón para publicar en la web.
 import { esc, fmtDate } from "./config.js";
 import { INTENSITIES, MIN_KM, PACES, distanceOptions, kmText } from "./club.js";
-import { plan, PREFERENCES } from "./rutas/planner.js";
+import { groupWeight, plan, PREFERENCES } from "./rutas/planner.js";
 import { createRouteMap } from "./routemap.js";
 import { $, api, reloadEvents, state, toast } from "./admin.js";
 
@@ -19,7 +19,7 @@ let routeMap = null;
 let root = null;
 
 function newSlot() {
-  return { km: 7, intensity: "medio", prefer: "parques", chosen: null };
+  return { km: 7, intensity: "medio", prefer: "parques", people: null, chosen: null }; // people null = los apuntados
 }
 
 export function mountRouteTab(container) {
@@ -60,6 +60,10 @@ export function mountRouteTab(container) {
             <div class="seg" id="gen-prefer">${Object.entries(PREFERENCES).map(([k, v]) => `<button type="button" data-v="${k}" title="${esc(v.hint)}">${v.label}</button>`).join("")}</div>
           </div>
         </div>
+        <div class="gen-people">
+          <div class="field"><input id="gen-people" type="number" min="1" max="500" inputmode="numeric" placeholder=" "><label for="gen-people">Personas</label></div>
+          <p class="hint" id="gen-people-hint"></p>
+        </div>
         <button class="btn-gold btn-block" type="button" id="gen-run">Generar rutas</button>
         <p class="gen-progress" id="gen-progress" hidden></p>
         <div class="gen-body">
@@ -99,6 +103,11 @@ export function mountRouteTab(container) {
       syncControls();
     });
   }
+  $("#gen-people", root).addEventListener("input", (e) => {
+    const n = Math.round(Number(e.target.value));
+    slot().people = n > 0 ? Math.min(500, n) : null;
+    peopleHint();
+  });
   $("#gen-run", root).addEventListener("click", generate);
   $("#candidates", root).addEventListener("click", (e) => {
     const card = e.target.closest("[data-c]");
@@ -122,6 +131,25 @@ export function mountRouteTab(container) {
 
 const slot = () => ui.slots[ui.slot];
 const maxKm = () => state.event?.max_km ?? 10;
+
+// Cuántos van a correr esta ruta: los apuntados; con dos recorridos, la corta es para los
+// ritmos tranquilo y medio y la larga para el rápido.
+function autoPeople(i = ui.slot) {
+  const booked = state.signups.filter((s) => !s.walk_in);
+  if (!ui.two) return booked.length;
+  const fast = booked.filter((s) => s.pace === "rapido").length;
+  return i === 1 ? fast : booked.length - fast;
+}
+const people = () => slot().people ?? autoPeople();
+
+function peopleHint() {
+  const n = people();
+  const g = groupWeight(n);
+  $("#gen-people-hint", root).textContent = (slot().people == null ? `Los apuntados${ui.two ? (ui.slot ? " a ritmo rápido" : " a ritmo tranquilo y medio") : ""}. Cámbialo si esperas más gente. ` : "")
+    + (g === 0 ? "Grupo pequeño: cualquier calle vale."
+      : g < 1.5 ? "Grupo mediano: evita calles estrechas, avenidas con tráfico y cruces cuando puede."
+      : "Grupo grande: busca paseos amplios y parques, y huye de calles estrechas, avenidas y cruces.");
+}
 
 export function renderRouteTab() {
   if (!root || !state.event) return;
@@ -239,6 +267,9 @@ function syncControls() {
   $("#gen-km-label", root).textContent = `${kmText(s.km, s.km % 1 ? 1 : 0)} km`;
   $("#gen-intensity", root).querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === s.intensity)));
   $("#gen-prefer", root).querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === s.prefer)));
+  const input = $("#gen-people", root);
+  if (document.activeElement !== input) input.value = people();
+  peopleHint();
   $("#gen-run", root).disabled = ui.busy;
 }
 
@@ -250,7 +281,7 @@ async function generate() {
   progress.hidden = false;
   try {
     const { candidates } = await plan({
-      targetKm: s.km, intensity: s.intensity, prefer: s.prefer, maxKm: maxKm(),
+      targetKm: s.km, intensity: s.intensity, prefer: s.prefer, maxKm: maxKm(), people: people(),
       onProgress: (msg, p) => { progress.textContent = `${msg} · ${Math.round(p * 100)}%`; },
     });
     ui.candidates = candidates;
@@ -281,7 +312,8 @@ function renderCandidates() {
     const park = surfacePct(c);
     return `<div class="candidate ${ui.preview === i ? "on" : ""} ${chosen ? "chosen" : ""}" data-c="${i}">
       <div><b>${esc(c.name)}</b>
-        <small>${kmText(c.km, 2)} km · ${c.gain != null ? `+${Math.round(c.gain)} m` : "sin desnivel"}${park != null ? ` · ${park}% parque` : ""}${i === 0 ? " · la mejor" : ""}</small></div>
+        <small>${kmText(c.km, 2)} km · ${c.gain != null ? `+${Math.round(c.gain)} m` : "sin desnivel"}${park != null ? ` · ${park}% parque` : ""}${i === 0 ? " · la mejor" : ""}</small>
+        ${c.crossings != null ? `<small class="group-stats">${c.crossings} cruces · ${Math.round(c.narrow)}% calle estrecha · ${Math.round(c.traffic)}% junto a avenidas</small>` : ""}</div>
       <button type="button" class="${chosen ? "btn-gold" : "btn-line"} small" data-choose>${chosen ? "Elegida" : "Elegir"}</button>
     </div>`;
   }).join("");
@@ -313,6 +345,10 @@ function toPublic(c, i) {
     prefer: c.prefer,
     pace: ui.two && i === 1 ? "rapido" : null,
     surface: c.surface ? Object.fromEntries(Object.entries(c.surface).map(([k, v]) => [k, Math.round(v)])) : null,
+    people: c.people ?? null,
+    crossings: c.crossings ?? null,
+    narrow: c.narrow != null ? Math.round(c.narrow) : null,
+    traffic: c.traffic != null ? Math.round(c.traffic) : null,
     landmarks: (c.landmarks ?? []).map((l) => l.name),
     urlPoints: (c.urlPoints ?? []).map(([a, b]) => [r5(a), r5(b)]),
     coords: (c.samples ?? c.coords).map(([a, b]) => [r5(a), r5(b)]),
