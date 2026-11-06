@@ -583,3 +583,11 @@ a.btn-gold { text-decoration: none; display: inline-flex; align-items: center; j
 .as-member b { font-family: var(--serif); font-weight: 400; font-size: 24px; }
 .as-member small { color: var(--muted); font-size: 13px; }
 .as-member .link-back { justify-self: start; padding: 6px 0 0; }
+
+/* En escritorio el menú va en el centro exacto de la cabecera, aparezca o no «Mi tarjeta» a la derecha
+   (con flex se centraba en el hueco que quedaba y se movía al cambiar el ancho de los botones) */
+@media (min-width: 900px) {
+  .topbar { display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; }
+  .topbar .brand { justify-self: start; }
+  .topbar > :last-child { justify-self: end; }
+}
