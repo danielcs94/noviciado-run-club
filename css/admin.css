@@ -383,3 +383,9 @@ body.is-admin #admin { display: block; }
 @media (min-width: 700px) { .gen-people { grid-template-columns: 240px 1fr; align-items: center; gap: 16px; } }
 .gen-people .hint { margin: 0; }
 .candidate small.group-stats { display: block; margin-top: 2px; color: var(--dim); }
+
+/* La barra de selección solo existe en el panel, y oculta del todo: en el iPhone (barra de Safari +
+   zona inferior) desplazarla hacia abajo no bastaba y asomaba bajo el botón «Reservar» de la web */
+.select-bar { visibility: hidden; transition: transform .3s cubic-bezier(.2,.8,.2,1), visibility 0s linear .3s; }
+.select-bar.show { visibility: visible; transition: transform .3s cubic-bezier(.2,.8,.2,1), visibility 0s; }
+body:not(.is-admin) .select-bar { display: none; }
